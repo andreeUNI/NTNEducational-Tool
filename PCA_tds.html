@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PCA - Educational Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg-start: #060b19;
+    --bg-end: #000000;
+    --accent-blue: #00e5ff;
+    --accent-purple: #a855f7;
+    --accent-green: #10b981;
+    --accent-amber: #f59e0b;
+    --accent-red: #ef4444;
+    --text-main: #ffffff;
+    --text-muted: #94a3b8;
+    --glass-bg: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --transition-smooth: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+
+    --pca-data: var(--accent-blue);
+    --pca-ghost: var(--text-muted);
+    --pca-t1: var(--accent-amber);
+    --pca-t2: var(--accent-purple);
+    --pca-grid: rgba(255, 255, 255, 0.06);
+    --pca-axis: rgba(255, 255, 255, 0.4);
+    --pca-text: var(--text-main);
+    --pca-hl: rgba(16, 185, 129, 0.2);
+    --pca-hl-glow: rgba(16, 185, 129, 0.45);
+    --pca-math-font: "Cambria Math", "STIX Two Math", "Times New Roman", serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
+    background-attachment: fixed;
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+    outline: 2px solid var(--accent-blue);
+    outline-offset: 3px;
+}
+
+.glass-effect {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+}
+
+.animated-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    z-index: -1;
+    pointer-events: none;
+}
+
+.blob {
+    position: absolute;
+    filter: blur(120px);
+    border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+    animation: moveBlob infinite linear;
+}
+
+.blob-1 { width: 60vw; height: 60vw; top: -20%; left: -10%; background: rgba(220, 20, 60, 0.15); animation-duration: 35s; }
+.blob-2 { width: 50vw; height: 50vw; bottom: -20%; right: -10%; background: rgba(255, 0, 0, 0.12); animation-duration: 45s; animation-direction: reverse; }
+.blob-3 { width: 45vw; height: 45vw; top: 20%; left: 30%; background: rgba(178, 34, 34, 0.1); animation-duration: 55s; }
+
+@keyframes moveBlob {
+    0% { transform: rotate(0deg) scale(1) translate(0, 0); }
+    33% { transform: rotate(120deg) scale(1.1) translate(5%, 10%); }
+    66% { transform: rotate(240deg) scale(0.9) translate(-10%, 5%); }
+    100% { transform: rotate(360deg) scale(1) translate(0, 0); }
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.site-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 2rem 3rem;
+    display: flex;
+    justify-content: flex-end;
+    z-index: 100;
+    pointer-events: none;
+}
+
+.home-btn {
+    pointer-events: auto;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    color: var(--text-main);
+}
+
+.home-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.home-btn svg {
+    width: 22px;
+    height: 22px;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+}
+
+.view-section {
+    transition: opacity 0.5s ease;
+    opacity: 1;
+}
+
+.view-section.is-hidden {
+    display: none;
+}
+
+.fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.view-home {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+    min-height: 100vh;
+}
+
+.badge-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 2.5rem;
+    animation: fadeInDown 1s ease-out;
+}
+
+.hero-title {
+    font-size: clamp(3rem, 6vw, 5rem);
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.02em;
+    animation: fadeInUp 1s ease-out 0.2s both;
+}
+
+.hero-title .line-1 {
+    display: block;
+    font-weight: 300;
+    color: var(--text-main);
+    margin-bottom: 0.2rem;
+}
+
+.hero-title .line-2 {
+    display: block;
+    font-weight: 800;
+    color: var(--accent-blue);
+    text-shadow: 0 0 40px rgba(0, 229, 255, 0.2);
+}
+
+.hero-subtitle {
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    color: var(--text-muted);
+    max-width: 600px;
+    margin-bottom: 3.5rem;
+    line-height: 1.6;
+    font-weight: 300;
+    animation: fadeInUp 1s ease-out 0.4s both;
+}
+
+.btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 3.5rem;
+    border-radius: 9999px;
+    background: transparent;
+    border: 2px solid var(--accent-blue);
+    color: var(--accent-blue);
+    font-family: inherit;
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    text-transform: uppercase;
+    animation: fadeInUp 1s ease-out 0.6s both;
+}
+
+.btn-outline:hover {
+    background: rgba(0, 229, 255, 0.1);
+    color: #ffffff;
+    box-shadow: 0 0 25px rgba(0, 229, 255, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-outline:active {
+    transform: translateY(1px);
+}
+
+.pca-page {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 6rem 2rem 4rem;
+}
+
+.app-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    animation: fadeInDown 0.8s ease-out;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.badge {
+    padding: 0.4rem 1.2rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    text-transform: lowercase;
+    letter-spacing: 0.25em;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.app-title {
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    font-weight: 300;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+}
+
+.text-accent {
+    color: var(--accent-blue);
+    font-weight: 700;
+}
+
+.app-subtitle {
+    color: var(--text-muted);
+    font-weight: 300;
+    font-size: 1.05rem;
+    max-width: 640px;
+    line-height: 1.6;
+}
+
+.pca {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    animation: fadeInUp 0.8s ease-out 0.2s both;
+}
+
+.pca-steps {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.pca-chip {
+    padding: 0.65rem 1.4rem;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.pca-chip:hover {
+    color: var(--text-main);
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.25);
+    transform: translateY(-2px);
+}
+
+.pca-chip--active {
+    color: var(--accent-blue);
+    background: rgba(0, 229, 255, 0.1);
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+}
+
+.pca-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 480px) minmax(0, 1fr);
+    gap: 2rem;
+    align-items: stretch;
+}
+
+.pca-figure {
+    border-radius: 16px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-self: start;
+}
+
+.pca-plot {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.pca-grid {
+    stroke: var(--pca-grid);
+    stroke-width: 1;
+}
+
+.pca-axis {
+    stroke: var(--pca-axis);
+    stroke-width: 1.2;
+}
+
+.pca-axis-label {
+    fill: var(--pca-text);
+    font-family: var(--pca-math-font);
+    font-style: italic;
+    font-size: 14px;
+}
+
+.pca-point {
+    fill: var(--pca-data);
+    stroke: rgba(255, 255, 255, 0.55);
+    stroke-width: 0.6;
+}
+
+.pca-ghost {
+    fill: var(--pca-ghost);
+    fill-opacity: 0.4;
+}
+
+.pca-residual {
+    stroke: var(--pca-ghost);
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+    stroke-opacity: 0.8;
+}
+
+.pca-arrow-t1 line {
+    stroke: var(--pca-t1);
+    stroke-width: 2.2;
+    stroke-linecap: round;
+}
+
+.pca-arrow-t1 polygon {
+    fill: var(--pca-t1);
+}
+
+.pca-arrow-t1 text {
+    fill: var(--pca-t1);
+}
+
+.pca-arrow-t2 line {
+    stroke: var(--pca-t2);
+    stroke-width: 2.2;
+    stroke-linecap: round;
+}
+
+.pca-arrow-t2 polygon {
+    fill: var(--pca-t2);
+}
+
+.pca-arrow-t2 text {
+    fill: var(--pca-t2);
+}
+
+.pca-arrow-t1,
+.pca-arrow-t2 {
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.25));
+}
+
+.pca-arrow-label {
+    font-family: var(--pca-math-font);
+    font-style: italic;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.pca-arc {
+    fill: none;
+    stroke: var(--pca-t1);
+    stroke-width: 1.5;
+}
+
+.pca-arc-label {
+    fill: var(--pca-t1);
+    font-family: var(--pca-math-font);
+    font-style: italic;
+    font-size: 15px;
+}
+
+.pca-hidden {
+    display: none;
+}
+
+.pca-legend {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.6rem 1.5rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 300;
+}
+
+.pca-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.pca-legend-swatch {
+    display: inline-block;
+}
+
+.pca-legend-swatch--data,
+.pca-legend-swatch--ghost {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.pca-legend-swatch--data { background: var(--pca-data); }
+.pca-legend-swatch--ghost { background: var(--pca-ghost); opacity: 0.5; }
+
+.pca-legend-swatch--t1,
+.pca-legend-swatch--t2 {
+    width: 18px;
+    height: 3px;
+    border-radius: 2px;
+}
+
+.pca-legend-swatch--t1 { background: var(--pca-t1); }
+.pca-legend-swatch--t2 { background: var(--pca-t2); }
+
+.pca-panel {
+    border-radius: 16px;
+    padding: 1.75rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    min-height: var(--pca-plot-height, 0);
+}
+
+.pca-panel--enter {
+    animation: fadeInUp 0.5s ease-out both;
+}
+
+.pca-title {
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.pca-op {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.95rem;
+    color: var(--accent-amber);
+}
+
+.pca-eq {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 0.9rem;
+}
+
+.pca-eq-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.pca-eq-label {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    text-align: center;
+    white-space: nowrap;
+}
+
+.pca-eq-item--op .pca-eq-sym {
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.pca-eq-sym {
+    font-family: var(--pca-math-font);
+    font-size: 1.4rem;
+    color: var(--text-muted);
+}
+
+.pca-matrix {
+    display: grid;
+    gap: 0.35rem 0.5rem;
+    padding: 0.4rem 0.7rem;
+    border-left: 2px solid rgba(255, 255, 255, 0.55);
+    border-right: 2px solid rgba(255, 255, 255, 0.55);
+    border-radius: 10px;
+    font-family: var(--pca-math-font);
+    font-size: 1rem;
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.pca-matrix[data-cols="2"] { grid-template-columns: repeat(2, minmax(3.1rem, auto)); }
+.pca-matrix[data-cols="5"] { grid-template-columns: repeat(5, minmax(3rem, auto)); }
+
+.pca-cell {
+    text-align: center;
+    padding: 0.25rem 0.4rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    transition: var(--transition-smooth);
+}
+
+.pca-cell--hl {
+    background: var(--pca-hl);
+    box-shadow: inset 0 0 12px var(--pca-hl-glow);
+}
+
+.pca-values {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+.pca-values span {
+    padding: 0.3rem 0.9rem;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    font-family: var(--pca-math-font);
+    font-size: 0.95rem;
+}
+
+.pca-note {
+    margin-top: auto;
+    padding: 1rem 1.25rem;
+    border-radius: 12px;
+    border-left: 4px solid var(--accent-blue);
+    background: rgba(0, 229, 255, 0.05);
+    font-size: 0.92rem;
+    font-weight: 300;
+    line-height: 1.6;
+}
+
+.pca-note::before {
+    content: "💡";
+    margin-right: 0.6rem;
+}
+
+.pca-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem 1.25rem;
+    padding: 1.25rem 1.5rem;
+    border-radius: 16px;
+}
+
+.pca-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.6rem;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.pca-btn:hover:not(:disabled) {
+    background: rgba(0, 229, 255, 0.1);
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.pca-btn:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+.pca-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.pca-btn--icon {
+    width: 50px;
+    height: 50px;
+    padding: 0;
+    border-radius: 50%;
+}
+
+.pca-btn--primary {
+    border: 2px solid var(--accent-blue);
+    color: var(--accent-blue);
+    text-transform: uppercase;
+    min-width: 11rem;
+}
+
+.pca-icon {
+    width: 22px;
+    height: 22px;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+}
+
+.pca-slider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1 1 340px;
+    min-width: 260px;
+}
+
+.pca-slider-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 300;
+    white-space: nowrap;
+}
+
+.pca-slider input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.15);
+    cursor: pointer;
+}
+
+.pca-slider input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent-blue);
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.6);
+}
+
+.pca-slider input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent-blue);
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.6);
+}
+
+.pca-slider-value {
+    min-width: 3.5ch;
+    color: var(--accent-blue);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1024px) {
+    .pca-layout { grid-template-columns: 1fr; }
+    .pca-figure { width: 100%; max-width: 520px; margin: 0 auto; }
+}
+
+@media (max-width: 640px) {
+    .site-header { padding: 1.25rem; }
+    .pca-page { padding: 5.5rem 1rem 2.5rem; }
+    .hero-subtitle { padding: 0 1rem; }
+    .pca-panel { padding: 1.25rem; }
+    .pca-slider { flex-wrap: wrap; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .blob { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="animated-background" aria-hidden="true">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+</div>
+
+<header class="site-header">
+    <button type="button" class="home-btn glass-effect" id="btn-home" aria-label="Torna alla schermata iniziale" title="Torna alla schermata iniziale">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+    </button>
+</header>
+
+<section class="view-section view-home" id="view-home" aria-label="Schermata iniziale">
+    <div class="badge-container">
+        <div class="badge glass-effect">educational tool</div>
+    </div>
+
+    <h1 class="hero-title">
+        <span class="line-1">Analisi delle</span>
+        <span class="line-2">COMPONENTI PRINCIPALI</span>
+    </h1>
+
+    <p class="hero-subtitle">
+        Uno strumento interattivo progettato per esplorare e comprendere la PCA a due variabili: dai dati centrati alla ricostruzione, in sei passaggi animati.
+    </p>
+
+    <button type="button" class="btn-outline" id="btn-start">Inizia</button>
+</section>
+
+<main class="view-section view-app pca-page is-hidden fade-out" id="view-app">
+
+    <header class="app-header">
+        <div class="badge glass-effect">educational tool</div>
+        <h1 class="app-title">Analisi delle <span class="text-accent">Componenti Principali</span></h1>
+        <p class="app-subtitle">La PCA a due variabili in sei passaggi: dai dati centrati alla ricostruzione con una sola componente.</p>
+    </header>
+
+    <section class="pca" aria-label="Animazione interattiva della PCA">
+
+        <nav class="pca-steps" aria-label="Passaggi dell'animazione">
+            <button type="button" class="pca-chip pca-chip--active" data-step="1" aria-current="step">1 · Dati</button>
+            <button type="button" class="pca-chip" data-step="2">2 · Covarianza</button>
+            <button type="button" class="pca-chip" data-step="3">3 · Autovettori</button>
+            <button type="button" class="pca-chip" data-step="4">4 · Rotazione</button>
+            <button type="button" class="pca-chip" data-step="5">5 · Elimina y₂</button>
+            <button type="button" class="pca-chip" data-step="6">6 · Ricostruzione</button>
+        </nav>
+
+        <div class="pca-layout">
+
+            <figure class="pca-figure glass-effect">
+                <svg class="pca-plot" viewBox="0 0 320 320" role="img" aria-label="Grafico dei dati a due variabili"></svg>
+                <ul class="pca-legend" aria-label="Legenda del grafico">
+                    <li class="pca-legend-item"><span class="pca-legend-swatch pca-legend-swatch--data"></span>dati</li>
+                    <li class="pca-legend-item"><span class="pca-legend-swatch pca-legend-swatch--ghost"></span>dati originali</li>
+                    <li class="pca-legend-item"><span class="pca-legend-swatch pca-legend-swatch--t1"></span>t₁</li>
+                    <li class="pca-legend-item"><span class="pca-legend-swatch pca-legend-swatch--t2"></span>t₂</li>
+                </ul>
+            </figure>
+
+            <aside class="pca-panel glass-effect" role="region" aria-label="Matrici coinvolte nel passaggio"></aside>
+
+        </div>
+
+        <div class="pca-controls glass-effect">
+            <button type="button" class="pca-btn pca-btn--icon" id="pca-prev" aria-label="Passaggio precedente">
+                <svg class="pca-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+            </button>
+            <button type="button" class="pca-btn pca-btn--icon" id="pca-next" aria-label="Passaggio successivo">
+                <svg class="pca-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+            </button>
+            <button type="button" class="pca-btn pca-btn--primary" id="pca-play">Riproduci tutto</button>
+            <button type="button" class="pca-btn" id="pca-new">Nuovi dati</button>
+            <div class="pca-slider">
+                <label class="pca-slider-label" for="pca-theta">Inclinazione θ dei dati</label>
+                <input id="pca-theta" type="range" min="10" max="80" step="1" value="45" aria-label="Inclinazione θ dei dati in gradi">
+                <output class="pca-slider-value" id="pca-theta-value" for="pca-theta">45°</output>
+            </div>
+        </div>
+
+    </section>
+
+</main>
+
+<script>
+(function () {
+    'use strict';
+
+    const N = 60;
+    const S1 = 1.9;
+    const S2 = 0.45;
+    const SCALE = 30;
+    const C = 160;
+    const GRID = 5;
+    const ARC_R = 38;
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const DURATIONS = [0, 1300, 1300, 1300, 2200, 2200, 2200];
+    const PAUSE_MS = 1000;
+    const STEP_TITLES = [
+        '',
+        '1 · dati centrati',
+        '2 · matrice di covarianza',
+        '3 · decomposizione spettrale',
+        '4 · rotazione',
+        '5 · elimina y₂',
+        '6 · ricostruzione'
+    ];
+    const STEP_OPS = [
+        '',
+        'X ← X − media',
+        'Cx = (1/N)·X·Xᵀ',
+        'Cx = T·Δ·Tᵀ',
+        'y = B·x con B = Tᵀ',
+        'ŷ = P·y',
+        'x̃ = T·ŷ = T·P·Tᵀ·x'
+    ];
+
+    const state = {
+        seed: 7,
+        theta0: 45,
+        step: 1,
+        s: 1,
+        data: null,
+        runId: 0,
+        seq: 0,
+        playing: false
+    };
+
+    const root = document.querySelector('.pca');
+    const svg = root.querySelector('.pca-plot');
+    const panel = root.querySelector('.pca-panel');
+    const chips = Array.from(root.querySelectorAll('.pca-chip'));
+    const btnPrev = document.getElementById('pca-prev');
+    const btnNext = document.getElementById('pca-next');
+    const btnPlay = document.getElementById('pca-play');
+    const btnNew = document.getElementById('pca-new');
+    const slider = document.getElementById('pca-theta');
+    const sliderValue = document.getElementById('pca-theta-value');
+
+    function mulberry32(seed) {
+        let a = seed | 0;
+        return function () {
+            a = (a + 0x6D2B79F5) | 0;
+            let t = Math.imul(a ^ (a >>> 15), 1 | a);
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    }
+
+    function gaussians(rnd, n) {
+        const out = [];
+        while (out.length < n) {
+            const u1 = 1 - rnd();
+            const u2 = rnd();
+            const r = Math.sqrt(-2 * Math.log(u1));
+            out.push(r * Math.cos(2 * Math.PI * u2));
+            if (out.length < n) out.push(r * Math.sin(2 * Math.PI * u2));
+        }
+        return out;
+    }
+
+    function dot(a, b) {
+        let s = 0;
+        for (let i = 0; i < a.length; i++) s += a[i] * b[i];
+        return s;
+    }
+
+    function center(a) {
+        let m = 0;
+        for (let i = 0; i < a.length; i++) m += a[i];
+        m /= a.length;
+        for (let i = 0; i < a.length; i++) a[i] -= m;
+    }
+
+    function scaleTo(a, target) {
+        const sd = Math.sqrt(dot(a, a) / a.length);
+        for (let i = 0; i < a.length; i++) a[i] *= target / sd;
+    }
+
+    function generateData(seed, theta0Deg) {
+        const rnd = mulberry32(seed * 1000003 + 17);
+        const u = gaussians(rnd, N);
+        const v = gaussians(rnd, N);
+        center(u);
+        center(v);
+        const k = dot(u, v) / dot(u, u);
+        for (let i = 0; i < N; i++) v[i] -= k * u[i];
+        scaleTo(u, S1);
+        scaleTo(v, S2);
+
+        const t0 = theta0Deg * Math.PI / 180;
+        const c0 = Math.cos(t0);
+        const s0 = Math.sin(t0);
+        const x1 = new Array(N);
+        const x2 = new Array(N);
+        for (let i = 0; i < N; i++) {
+            x1[i] = c0 * u[i] - s0 * v[i];
+            x2[i] = s0 * u[i] + c0 * v[i];
+        }
+
+        let c11 = 0, c12 = 0, c22 = 0;
+        for (let i = 0; i < N; i++) {
+            c11 += x1[i] * x1[i];
+            c12 += x1[i] * x2[i];
+            c22 += x2[i] * x2[i];
+        }
+        c11 /= N;
+        c12 /= N;
+        c22 /= N;
+
+        const theta = 0.5 * Math.atan2(2 * c12, c11 - c22);
+        const ct = Math.cos(theta);
+        const st = Math.sin(theta);
+        const lam1 = c11 * ct * ct + 2 * c12 * ct * st + c22 * st * st;
+        const lam2 = c11 * st * st - 2 * c12 * ct * st + c22 * ct * ct;
+
+        const y1 = new Array(N);
+        const y2 = new Array(N);
+        for (let i = 0; i < N; i++) {
+            y1[i] = ct * x1[i] + st * x2[i];
+            y2[i] = -st * x1[i] + ct * x2[i];
+        }
+
+        return { x1, x2, y1, y2, c11, c12, c22, theta, lam1, lam2 };
+    }
+
+    function regenerate() {
+        state.data = generateData(state.seed, state.theta0);
+    }
+
+    function easeInOutCubic(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    function covariance(pts) {
+        let a = 0, b = 0, c = 0;
+        for (let i = 0; i < pts.length; i++) {
+            a += pts[i][0] * pts[i][0];
+            b += pts[i][0] * pts[i][1];
+            c += pts[i][1] * pts[i][1];
+        }
+        return [a / pts.length, b / pts.length, c / pts.length];
+    }
+
+    function geometry(k, s) {
+        const d = state.data;
+        const th = d.theta;
+        const g = { pts: new Array(N), ghosts: null, t1: null, t2: null, arc: null };
+        let i;
+
+        if (k <= 3) {
+            for (i = 0; i < N; i++) g.pts[i] = [d.x1[i], d.x2[i]];
+            if (k === 3) {
+                g.t1 = { angle: th, factor: s };
+                g.t2 = { angle: th + Math.PI / 2, factor: s };
+                g.arc = th * s;
+            }
+        } else if (k === 4) {
+            const c = Math.cos(th * s);
+            const sn = Math.sin(th * s);
+            for (i = 0; i < N; i++) {
+                g.pts[i] = [c * d.x1[i] + sn * d.x2[i], -sn * d.x1[i] + c * d.x2[i]];
+            }
+            const a = th * (1 - s);
+            g.t1 = { angle: a, factor: 1 };
+            g.t2 = { angle: a + Math.PI / 2, factor: 1 };
+            g.arc = a;
+        } else if (k === 5) {
+            g.ghosts = new Array(N);
+            for (i = 0; i < N; i++) {
+                g.pts[i] = [d.y1[i], d.y2[i] * (1 - s)];
+                g.ghosts[i] = [d.y1[i], d.y2[i]];
+            }
+            g.t1 = { angle: 0, factor: 1 };
+            g.t2 = { angle: Math.PI / 2, factor: 1 - s };
+        } else {
+            const c = Math.cos(th * s);
+            const sn = Math.sin(th * s);
+            g.ghosts = new Array(N);
+            for (i = 0; i < N; i++) {
+                g.pts[i] = [c * d.y1[i], sn * d.y1[i]];
+                g.ghosts[i] = [c * d.y1[i] - sn * d.y2[i], sn * d.y1[i] + c * d.y2[i]];
+            }
+            g.t1 = { angle: th * s, factor: 1 };
+            g.arc = th * s;
+        }
+        return g;
+    }
+
+    function axisLetter(k, s) {
+        if (k <= 3) return 'x';
+        if (k === 4) return s < 0.5 ? 'x' : 'y';
+        if (k === 5) return 'y';
+        return s < 0.5 ? 'y' : 'x';
+    }
+
+    function el(name, attrs, parent) {
+        const e = document.createElementNS(SVG_NS, name);
+        for (const key in attrs) e.setAttribute(key, attrs[key]);
+        if (parent) parent.appendChild(e);
+        return e;
+    }
+
+    const gGrid = el('g', {}, svg);
+    for (let i = -GRID; i <= GRID; i++) {
+        el('line', { class: 'pca-grid', x1: C + i * SCALE, y1: C - GRID * SCALE, x2: C + i * SCALE, y2: C + GRID * SCALE }, gGrid);
+        el('line', { class: 'pca-grid', x1: C - GRID * SCALE, y1: C + i * SCALE, x2: C + GRID * SCALE, y2: C + i * SCALE }, gGrid);
+    }
+    el('line', { class: 'pca-axis', x1: 4, y1: C, x2: 316, y2: C }, svg);
+    el('line', { class: 'pca-axis', x1: C, y1: 4, x2: C, y2: 316 }, svg);
+    const labelX = el('text', { class: 'pca-axis-label', x: 312, y: 150, 'text-anchor': 'end' }, svg);
+    const labelY = el('text', { class: 'pca-axis-label', x: 168, y: 16, 'text-anchor': 'start' }, svg);
+
+    const gResiduals = el('g', {}, svg);
+    const gGhosts = el('g', {}, svg);
+    const gPoints = el('g', {}, svg);
+    const residualEls = [];
+    const ghostEls = [];
+    const pointEls = [];
+    for (let i = 0; i < N; i++) {
+        residualEls.push(el('line', { class: 'pca-residual' }, gResiduals));
+    }
+    for (let i = 0; i < N; i++) {
+        ghostEls.push(el('circle', { class: 'pca-ghost', r: 2.6 }, gGhosts));
+    }
+    for (let i = 0; i < N; i++) {
+        pointEls.push(el('circle', { class: 'pca-point', r: 3.2 }, gPoints));
+    }
+
+    function makeArrow(cls, label) {
+        const g = el('g', { class: cls }, svg);
+        const line = el('line', { x1: C, y1: C, x2: C, y2: C }, g);
+        const head = el('polygon', { points: '0,0 0,0 0,0' }, g);
+        const text = el('text', { class: 'pca-arrow-label', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, g);
+        text.textContent = label;
+        return { g, line, head, text };
+    }
+
+    const arrowT1 = makeArrow('pca-arrow-t1', 't₁');
+    const arrowT2 = makeArrow('pca-arrow-t2', 't₂');
+    const arc = el('path', { class: 'pca-arc', d: '' }, svg);
+    const arcLabel = el('text', { class: 'pca-arc-label', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, svg);
+    arcLabel.textContent = 'θ';
+
+    function updateArrow(a, spec, lambda) {
+        if (!spec) {
+            a.g.classList.add('pca-hidden');
+            return;
+        }
+        const len = 2 * Math.sqrt(lambda) * spec.factor * SCALE;
+        if (len < 1.5) {
+            a.g.classList.add('pca-hidden');
+            return;
+        }
+        a.g.classList.remove('pca-hidden');
+        const ux = Math.cos(spec.angle);
+        const uy = -Math.sin(spec.angle);
+        const hl = Math.min(10, len * 0.6);
+        const hw = hl * 0.45;
+        const tx = C + ux * len;
+        const ty = C + uy * len;
+        const bx = tx - ux * hl;
+        const by = ty - uy * hl;
+        a.line.setAttribute('x2', bx.toFixed(2));
+        a.line.setAttribute('y2', by.toFixed(2));
+        a.head.setAttribute('points',
+            tx.toFixed(2) + ',' + ty.toFixed(2) + ' ' +
+            (bx - uy * hw).toFixed(2) + ',' + (by + ux * hw).toFixed(2) + ' ' +
+            (bx + uy * hw).toFixed(2) + ',' + (by - ux * hw).toFixed(2));
+        a.text.setAttribute('x', (tx + ux * 15).toFixed(2));
+        a.text.setAttribute('y', (ty + uy * 15).toFixed(2));
+    }
+
+    function updateArc(angle) {
+        if (angle === null || angle < 0.01) {
+            arc.classList.add('pca-hidden');
+            arcLabel.classList.add('pca-hidden');
+            return;
+        }
+        arc.classList.remove('pca-hidden');
+        arcLabel.classList.remove('pca-hidden');
+        const x = C + ARC_R * Math.cos(angle);
+        const y = C - ARC_R * Math.sin(angle);
+        arc.setAttribute('d', 'M ' + (C + ARC_R) + ' ' + C + ' A ' + ARC_R + ' ' + ARC_R + ' 0 0 0 ' + x.toFixed(2) + ' ' + y.toFixed(2));
+        let lx, ly;
+        if (angle < 0.45) {
+            lx = C + ARC_R + 14;
+            ly = C + 12;
+        } else {
+            lx = C + (ARC_R + 14) * Math.cos(angle / 2);
+            ly = C - (ARC_R + 14) * Math.sin(angle / 2);
+        }
+        arcLabel.setAttribute('x', lx.toFixed(2));
+        arcLabel.setAttribute('y', ly.toFixed(2));
+    }
+
+    const f = function (v) {
+        const t = Math.abs(v).toFixed(2);
+        if (t === '0.00') return t;
+        return (v < 0 ? '−' : '') + t;
+    };
+
+    const cellHtml = function (c) {
+        const o = typeof c === 'string' ? { t: c } : c;
+        return '<span class="pca-cell' + (o.h ? ' pca-cell--hl' : '') + '">' + o.t + '</span>';
+    };
+    const hl = function (t) { return { t: t, h: true }; };
+    const mat = function (rows) {
+        return '<div class="pca-matrix" data-cols="' + rows[0].length + '">' +
+            rows.map(function (r) { return r.map(cellHtml).join(''); }).join('') + '</div>';
+    };
+    const labeled = function (label, m) {
+        return '<div class="pca-eq-item"><span class="pca-eq-label">' + label + '</span>' + m + '</div>';
+    };
+    const op = function (t) {
+        return '<div class="pca-eq-item pca-eq-item--op"><span class="pca-eq-label" aria-hidden="true">&nbsp;</span><span class="pca-eq-sym">' + t + '</span></div>';
+    };
+    const eq = function () {
+        return '<div class="pca-eq">' + Array.prototype.join.call(arguments, '') + '</div>';
+    };
+    const values = function () {
+        return '<div class="pca-values">' + Array.prototype.map.call(arguments, function (t) { return '<span>' + t + '</span>'; }).join('') + '</div>';
+    };
+    const covMat = function (cv, highlightOff) {
+        const off = f(cv[1]);
+        return mat([
+            [f(cv[0]), highlightOff ? hl(off) : off],
+            [highlightOff ? hl(off) : off, f(cv[2])]
+        ]);
+    };
+
+    function panelHTML(k, s, g) {
+        const d = state.data;
+        const th = d.theta;
+        const c = Math.cos(th * s);
+        const sn = Math.sin(th * s);
+        const cos = Math.cos(th);
+        const sin = Math.sin(th);
+        let body = '';
+        let note = '';
+
+        if (k === 1) {
+            const r1 = [0, 1, 2, 3].map(function (i) { return f(d.x1[i]); }).concat('⋯');
+            const r2 = [0, 1, 2, 3].map(function (i) { return f(d.x2[i]); }).concat('⋯');
+            body = eq(labeled('X (2 × ' + N + ')', mat([r1, r2])));
+            note = 'La nuvola di punti è un’ellisse inclinata: x₁ e x₂ sono correlate.';
+        } else if (k === 2) {
+            const rho = d.c12 / Math.sqrt(d.c11 * d.c22);
+            body = eq(labeled('Cx', mat([
+                [f(d.c11), hl(f(d.c12))],
+                [hl(f(d.c12)), f(d.c22)]
+            ])));
+            note = 'I termini fuori diagonale sono ≠ 0: x₁ e x₂ sono correlate (ρ = ' + f(rho) + ').';
+        } else if (k === 3) {
+            body = eq(
+                labeled('Cx', mat([[f(d.c11), f(d.c12)], [f(d.c12), f(d.c22)]])),
+                op('='),
+                labeled('T', mat([[f(cos), f(-sin)], [f(sin), f(cos)]])),
+                op('·'),
+                labeled('Δ', mat([[f(d.lam1), f(0)], [f(0), f(d.lam2)]])),
+                op('·'),
+                labeled('Tᵀ', mat([[f(cos), f(sin)], [f(-sin), f(cos)]]))
+            ) + values(
+                'θ = ' + (th * 180 / Math.PI).toFixed(1) + '°',
+                'λ₁ = ' + f(d.lam1),
+                'λ₂ = ' + f(d.lam2)
+            );
+            note = 'Le colonne di T sono i versori t₁ e t₂, cioè le frecce nel grafico; T·Tᵀ = I.';
+        } else if (k === 4) {
+            const cy = covariance(g.pts);
+            body = eq(
+                labeled('B', mat([[f(c), f(sn)], [f(-sn), f(c)]])),
+                labeled('Cy (punti mostrati)', covMat(cy, true))
+            ) + values('rotazione al ' + Math.round(s * 100) + '%');
+            note = s < 0.995
+                ? 'Il termine fuori diagonale scende verso 0 mentre ruoti.'
+                : 'Cy = Tᵀ(TΔTᵀ)T = Δ: diagonale, y₁ e y₂ sono scorrelate.';
+        } else if (k === 5) {
+            const cp = covariance(g.pts);
+            body = eq(
+                labeled('P', mat([[f(1), f(0)], [f(0), f(1 - s)]])),
+                labeled('covarianza (punti mostrati)', covMat(cp, false))
+            );
+            note = 'Varianza conservata: ' + (d.lam1 / (d.lam1 + d.lam2) * 100).toFixed(1) +
+                '% (λ₁ / (λ₁ + λ₂)); i tratteggi sono la parte scartata.';
+        } else {
+            const cr = covariance(g.pts);
+            let mse = 0;
+            for (let i = 0; i < N; i++) {
+                const dx = g.ghosts[i][0] - g.pts[i][0];
+                const dy = g.ghosts[i][1] - g.pts[i][1];
+                mse += dx * dx + dy * dy;
+            }
+            mse /= N;
+            body = eq(
+                labeled('T', mat([[f(c), f(-sn)], [f(sn), f(c)]])),
+                labeled('T·P·Tᵀ = t₁·t₁ᵀ', mat([[f(cos * cos), f(cos * sin)], [f(cos * sin), f(sin * sin)]])),
+                labeled('covarianza (rango 1)', covMat(cr, false))
+            ) + values('errore quadratico medio = ' + f(mse), 'λ₂ = ' + f(d.lam2));
+            note = 'I punti ricostruiti stanno sulla retta x̃₂ = tan θ · x̃₁ (tan θ = ' + f(Math.tan(th)) + ')' +
+                (Math.abs(th - Math.PI / 4) < 0.002 ? ', cioè x̃₁ = x̃₂' : '') + '.';
+        }
+
+        return '<h2 class="pca-title">' + STEP_TITLES[k] + '</h2>' +
+            '<p class="pca-op">Operazione: ' + STEP_OPS[k] + '</p>' +
+            body +
+            '<p class="pca-note">' + note + '</p>';
+    }
+
+    function render() {
+        const k = state.step;
+        const s = state.s;
+        const d = state.data;
+        const g = geometry(k, s);
+
+        for (let i = 0; i < N; i++) {
+            pointEls[i].setAttribute('cx', (C + g.pts[i][0] * SCALE).toFixed(2));
+            pointEls[i].setAttribute('cy', (C - g.pts[i][1] * SCALE).toFixed(2));
+        }
+
+        if (g.ghosts) {
+            gGhosts.classList.remove('pca-hidden');
+            gResiduals.classList.remove('pca-hidden');
+            for (let i = 0; i < N; i++) {
+                const gx = (C + g.ghosts[i][0] * SCALE).toFixed(2);
+                const gy = (C - g.ghosts[i][1] * SCALE).toFixed(2);
+                ghostEls[i].setAttribute('cx', gx);
+                ghostEls[i].setAttribute('cy', gy);
+                residualEls[i].setAttribute('x1', gx);
+                residualEls[i].setAttribute('y1', gy);
+                residualEls[i].setAttribute('x2', (C + g.pts[i][0] * SCALE).toFixed(2));
+                residualEls[i].setAttribute('y2', (C - g.pts[i][1] * SCALE).toFixed(2));
+            }
+        } else {
+            gGhosts.classList.add('pca-hidden');
+            gResiduals.classList.add('pca-hidden');
+        }
+
+        updateArrow(arrowT1, g.t1, d.lam1);
+        updateArrow(arrowT2, g.t2, d.lam2);
+        updateArc(g.arc);
+
+        const letter = axisLetter(k, s);
+        labelX.textContent = letter + '₁';
+        labelY.textContent = letter + '₂';
+
+        panel.innerHTML = panelHTML(k, s, g);
+    }
+
+    function syncChips() {
+        chips.forEach(function (chip, i) {
+            const active = i + 1 === state.step;
+            chip.classList.toggle('pca-chip--active', active);
+            if (active) chip.setAttribute('aria-current', 'step');
+            else chip.removeAttribute('aria-current');
+        });
+        svg.setAttribute('aria-label', 'Grafico dei dati a due variabili, passaggio ' + STEP_TITLES[state.step]);
+    }
+
+    function syncControls() {
+        btnPrev.disabled = state.step <= 1;
+        btnNext.disabled = state.step >= 6;
+        btnPlay.textContent = state.playing ? 'Pausa' : 'Riproduci tutto';
+    }
+
+    function restartPanelEntrance() {
+        panel.classList.remove('pca-panel--enter');
+        void panel.offsetWidth;
+        panel.classList.add('pca-panel--enter');
+    }
+
+    function animate(k) {
+        const id = ++state.runId;
+        state.step = k;
+        state.s = 0;
+        syncChips();
+        syncControls();
+        restartPanelEntrance();
+        render();
+        const dur = DURATIONS[k];
+        const t0 = performance.now();
+        return new Promise(function (resolve) {
+            function frame(now) {
+                if (id !== state.runId) {
+                    resolve(false);
+                    return;
+                }
+                const t = Math.min(1, Math.max(0, (now - t0) / dur));
+                state.s = easeInOutCubic(t);
+                render();
+                if (t < 1) requestAnimationFrame(frame);
+                else resolve(true);
+            }
+            requestAnimationFrame(frame);
+        });
+    }
+
+    function stopSequence() {
+        state.seq++;
+        state.runId++;
+        state.playing = false;
+        syncControls();
+    }
+
+    function goTo(k) {
+        if (k < 1 || k > 6) return;
+        stopSequence();
+        animate(k);
+    }
+
+    function wait(ms) {
+        return new Promise(function (resolve) { setTimeout(resolve, ms); });
+    }
+
+    async function playAll() {
+        if (state.playing) {
+            stopSequence();
+            return;
+        }
+        const seq = ++state.seq;
+        state.playing = true;
+        syncControls();
+        for (let k = 1; k <= 6; k++) {
+            const ok = await animate(k);
+            if (!ok || seq !== state.seq) return;
+            if (k < 6) {
+                await wait(PAUSE_MS);
+                if (seq !== state.seq) return;
+            }
+        }
+        state.playing = false;
+        syncControls();
+    }
+
+    chips.forEach(function (chip, i) {
+        chip.addEventListener('click', function () { goTo(i + 1); });
+    });
+    btnPrev.addEventListener('click', function () { goTo(state.step - 1); });
+    btnNext.addEventListener('click', function () { goTo(state.step + 1); });
+    btnPlay.addEventListener('click', playAll);
+    btnNew.addEventListener('click', function () {
+        state.seed++;
+        regenerate();
+        render();
+    });
+    slider.addEventListener('input', function () {
+        state.theta0 = Number(slider.value);
+        sliderValue.textContent = slider.value + '°';
+        regenerate();
+        render();
+    });
+
+    function syncPlotHeight() {
+        const h = svg.getBoundingClientRect().height;
+        if (h > 0) root.style.setProperty('--pca-plot-height', h + 'px');
+    }
+
+    if (window.ResizeObserver) new ResizeObserver(syncPlotHeight).observe(svg);
+    else window.addEventListener('resize', syncPlotHeight);
+
+    const viewHome = document.getElementById('view-home');
+    const viewApp = document.getElementById('view-app');
+    const btnStart = document.getElementById('btn-start');
+    const btnHome = document.getElementById('btn-home');
+    let switching = false;
+
+    function showView(target, source) {
+        if (switching) return;
+        switching = true;
+        source.classList.add('fade-out');
+        setTimeout(function () {
+            source.classList.add('is-hidden');
+            target.classList.remove('is-hidden');
+            window.scrollTo(0, 0);
+            syncPlotHeight();
+            setTimeout(function () {
+                target.classList.remove('fade-out');
+                switching = false;
+            }, 50);
+        }, 500);
+    }
+
+    function resetToStart() {
+        stopSequence();
+        state.step = 1;
+        state.s = 1;
+        syncChips();
+        syncControls();
+        render();
+    }
+
+    btnStart.addEventListener('click', function () {
+        resetToStart();
+        showView(viewApp, viewHome);
+    });
+
+    btnHome.addEventListener('click', function () {
+        if (viewApp.classList.contains('is-hidden')) return;
+        stopSequence();
+        showView(viewHome, viewApp);
+    });
+
+    regenerate();
+    syncChips();
+    syncControls();
+    render();
+    syncPlotHeight();
+})();
+</script>
+</body>
+</html>

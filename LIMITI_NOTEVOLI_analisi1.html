@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limiti Notevoli - Progetto Future Lab</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    
+    <!-- Configurazione MathJax prima del caricamento dello script -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true
+            },
+            options: {
+                enableMenu: false
+            },
+            startup: {
+                pageReady: () => {
+                    return MathJax.startup.defaultPageReady();
+                }
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --accent-blue: #3b82f6;
+            --aurora-1: rgba(59, 130, 246, 0.18);
+            --aurora-2: rgba(45, 212, 191, 0.12);
+        }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: var(--bg-dark);
+            color: #f8fafc;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* Forza la leggibilità di MathJax su sfondi scuri */
+        mjx-container {
+            color: #ffffff !important;
+            font-size: 105% !important;
+            outline: none !important;
+        }
+        
+        mjx-container[display="true"] {
+            margin: 1.5em 0 !important;
+        }
+
+        /* --- BACKGROUND AURORA --- */
+        .background-blobs {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            background: radial-gradient(circle at top right, #0f172a, #020617);
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            animation: aurora-flow 12s infinite alternate ease-in-out;
+            opacity: 0.8;
+        }
+
+        @keyframes aurora-flow {
+            0% { transform: translate(-15%, -15%) scale(1) rotate(0deg); opacity: 0.5; }
+            100% { transform: translate(30%, 25%) scale(1.5) rotate(15deg); opacity: 0.7; }
+        }
+
+        /* --- UI COMPONENTS --- */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f8fafc;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            border-radius: 1.5rem;
+        }
+
+        .study-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            width: 100%;
+            max-width: 340px;
+            position: relative;
+        }
+
+        .study-card:hover {
+            transform: scale(1.05);
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--bg-dark);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .card-zooming {
+            position: fixed !important;
+            z-index: 999 !important;
+            transition: all 0.7s cubic-bezier(0.7, 0, 0.3, 1) !important;
+            transform: translate(-50%, -50%) scale(5) !important;
+            top: 50% !important;
+            left: 50% !important;
+            opacity: 0 !important;
+            pointer-events: none;
+        }
+
+        .math-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 3px solid var(--accent-blue);
+            color: white;
+        }
+
+        .neo-input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            transition: all 0.2s ease;
+        }
+
+        .neo-input:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--accent-blue);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        /* Navigazione */
+        .nav-trigger {
+            position: fixed;
+            top: 2rem;
+            z-index: 1000;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+        }
+
+        .nav-trigger:hover {
+            background: white;
+            color: var(--bg-dark);
+            transform: scale(1.1);
+        }
+
+        .home-trigger { right: 2rem; }
+        .back-trigger { left: 2rem; }
+
+        /* --- View Transitions (VERTICAL) --- */
+        .view-section {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            transition: transform 0.7s cubic-bezier(0.6, 0, 0.2, 1), opacity 0.6s ease;
+            will-change: transform, opacity;
+            display: none;
+            opacity: 0;
+        }
+
+        .view-active {
+            display: block;
+        }
+
+        /* Stati di scorrimento verticale */
+        .slide-up { transform: translateY(-100%); opacity: 0; }
+        .slide-down { transform: translateY(100%); opacity: 0; }
+        .slide-center { transform: translateY(0); opacity: 1; }
+
+        /* Stili per le Flashcard in Area Studio */
+        .flashcard-section {
+            display: flex;
+            flex-direction: column;
+            gap: 6rem;
+            width: 100%;
+        }
+        .flashcard-row {
+            display: flex;
+            flex-direction: row;
+            gap: 3rem;
+            align-items: center; 
+            width: 100%;
+        }
+        .flashcard-theory-col {
+            flex: 1.5; 
+        }
+        .flashcard-graph-col {
+            flex: 1; 
+            max-width: 500px; 
+        }
+        .flashcard-row-reverse {
+            flex-direction: row-reverse;
+        }
+        @media (max-width: 1100px) {
+            .flashcard-row, .flashcard-row-reverse { 
+                flex-direction: column; 
+                align-items: stretch;
+            }
+            .flashcard-graph-col {
+                max-width: 100%;
+            }
+        }
+
+        /* Bottone Variante Graph */
+        .variant-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.2s ease;
+            color: #94a3b8;
+        }
+        .variant-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+        .variant-btn.active {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: white;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="background-blobs">
+        <div class="blob" style="width: 600px; height: 600px; top: -200px; left: -100px; background: var(--aurora-1);"></div>
+        <div class="blob" style="width: 700px; height: 700px; bottom: -200px; right: -200px; background: var(--aurora-2); animation-delay: -3s;"></div>
+    </div>
+
+    <!-- Pulsanti -->
+    <button id="btnHome" class="nav-trigger home-trigger" onclick="showView('home', 'down')" title="Home">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </button>
+
+    <button id="btnBack" class="nav-trigger back-trigger hidden" onclick="goBack()" title="Indietro">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </button>
+
+    <!-- HOME -->
+    <div id="homeView" class="view-section slide-center view-active flex flex-col items-center justify-center text-center px-4">
+        <div class="space-y-6 max-w-2xl">
+            <div class="inline-block px-4 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-bold tracking-[0.3em] uppercase mb-4">
+                Educational Tool
+            </div>
+            <h1 class="text-5xl md:text-7xl font-extrabold tracking-tighter text-white">
+                Applicazione<br><span class="text-blue-500">LIMITI NOTEVOLI</span>
+            </h1>
+            <p class="text-slate-400 text-lg md:text-xl font-light">
+                Esplora, studia e visualizza il comportamento asintotico delle successioni matematiche.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center pt-8">
+                <button onclick="showView('study', 'up')" class="btn-main px-10 py-4 rounded-2xl text-lg font-semibold tracking-wide border border-white/10 text-white hover:bg-white hover:text-slate-900 transition-all">
+                    1. STUDIA
+                </button>
+                <button onclick="showView('app', 'up')" class="btn-main px-10 py-4 rounded-2xl text-lg font-semibold tracking-wide border border-white/10 text-white hover:bg-white hover:text-slate-900 transition-all">
+                    2. APPLICA
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AREA STUDIO -->
+    <div id="studyView" class="view-section slide-down py-24 px-4 md:px-8">
+        <div class="max-w-6xl mx-auto space-y-16">
+            <header class="text-center space-y-4">
+                <h2 class="text-4xl md:text-5xl font-extrabold text-white">Area di <span class="text-blue-500">Apprendimento</span></h2>
+                <p class="text-slate-400 text-lg font-light">Seleziona una categoria per approfondire la teoria.</p>
+            </header>
+            
+            <div class="flex flex-wrap justify-center gap-8">
+                <div class="study-card p-8 rounded-[2rem] flex flex-col justify-between h-72" onclick="openStudyCategory('fondamentali', this)">
+                    <span class="text-blue-500 font-bold text-xs tracking-widest uppercase">Base</span>
+                    <h3 class="text-2xl font-extrabold text-white">Limiti Fondamentali</h3>
+                    <p class="text-sm opacity-60 font-light text-white">Nepero, Radici ed Esponenziali base.</p>
+                </div>
+                <div class="study-card p-8 rounded-[2rem] flex flex-col justify-between h-72" onclick="openStudyCategory('gerarchia', this)">
+                    <span class="text-emerald-500 font-bold text-xs tracking-widest uppercase">Confronto</span>
+                    <h3 class="text-2xl font-extrabold text-white">Gerarchia degli Infiniti</h3>
+                    <p class="text-sm opacity-60 font-light text-white">Velocità di crescita verso l'infinito.</p>
+                </div>
+                <div class="study-card p-8 rounded-[2rem] flex flex-col justify-between h-72" onclick="openStudyCategory('goniometrici', this)">
+                    <span class="text-rose-500 font-bold text-xs tracking-widest uppercase">Trigonometria</span>
+                    <h3 class="text-2xl font-extrabold text-white">Limiti Goniometrici</h3>
+                    <p class="text-sm opacity-60 font-light text-white">Seno, Coseno e Tangente.</p>
+                </div>
+                <div class="study-card p-8 rounded-[2rem] flex flex-col justify-between h-72" onclick="openStudyCategory('esp-log', this)">
+                    <span class="text-amber-500 font-bold text-xs tracking-widest uppercase">Trascendenti</span>
+                    <h3 class="text-2xl font-extrabold text-white">Limiti Esponenziali e Logaritmici</h3>
+                    <p class="text-sm opacity-60 font-light text-white">Logaritmi naturali e basi diverse.</p>
+                </div>
+                <div class="study-card p-8 rounded-[2rem] flex flex-col justify-between h-72" onclick="openStudyCategory('potenza-iper', this)">
+                    <span class="text-purple-500 font-bold text-xs tracking-widest uppercase">Avanzati</span>
+                    <h3 class="text-2xl font-extrabold text-white">Limiti di Potenza e Iperbolici</h3>
+                    <p class="text-sm opacity-60 font-light text-white">Generalizzazioni ed iperboliche.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DETTAGLIO STUDIO -->
+    <div id="studyDetailView" class="view-section slide-down py-24 px-4 md:px-12 lg:px-20">
+        <div class="max-w-[90%] mx-auto space-y-12">
+            <header class="text-center space-y-4">
+                <h2 id="categoryTitle" class="text-5xl font-extrabold text-white"></h2>
+            </header>
+            <div id="categoryContent" class="space-y-24"></div>
+        </div>
+    </div>
+
+    <!-- APPLICAZIONE -->
+    <div id="appView" class="view-section slide-down py-24 px-4 md:px-8">
+        <div class="max-w-6xl mx-auto space-y-8">
+            <header class="text-left space-y-2 ml-2">
+                <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-white">Laboratorio <span class="text-blue-500">Analisi</span></h1>
+                <p class="text-slate-400 text-sm font-light">Seleziona un limite notevole e verifica la sua convergenza.</p>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div class="lg:col-span-4 space-y-6">
+                    <div class="glass-panel p-6 space-y-6">
+                        <section class="space-y-2">
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Selezione Limite</label>
+                            <select id="limitSelector" class="w-full p-3 neo-input rounded-xl text-sm font-semibold cursor-pointer" onchange="updateLimit()">
+                                <optgroup label="Fondamentali">
+                                    <option value="nepero">Numero di Nepero</option>
+                                    <option value="geometrica">Successione Geometrica</option>
+                                    <option value="radice_a">Radice n-esima di a</option>
+                                    <option value="radice_n">Radice n-esima di n</option>
+                                </optgroup>
+                                <optgroup label="Goniometrici">
+                                    <option value="seno">Limite del Seno</option>
+                                    <option value="coseno">Limite del Coseno</option>
+                                    <option value="tangente">Limite della Tangente</option>
+                                </optgroup>
+                                <optgroup label="Esponenziali / Log">
+                                    <option value="ln">Logaritmo Naturale</option>
+                                    <option value="exp">Esponenziale Naturale</option>
+                                    <option value="potenza">Limite della Potenza</option>
+                                </optgroup>
+                            </select>
+                        </section>
+
+                        <section class="space-y-2">
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Formula Attesa</label>
+                            <div class="math-container p-4 rounded-xl shadow-sm flex items-center justify-center min-h-[60px]">
+                                <div id="formulaDisplay" class="text-lg text-slate-200"></div>
+                            </div>
+                        </section>
+
+                        <section class="space-y-2">
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Verifica Valore</label>
+                            <div class="flex flex-col gap-2">
+                                <input type="text" id="userInput" placeholder="Es: 1, e, 0.5..." class="p-3 neo-input rounded-xl text-sm">
+                                <button onclick="checkResult()" class="btn-action bg-blue-600 text-white text-xs font-bold py-3 rounded-xl hover:bg-blue-700 transition-all">
+                                    ANALIZZA GRAFICO
+                                </button>
+                            </div>
+                            <p id="feedback" class="text-xs font-bold h-4 px-1"></p>
+                        </section>
+                    </div>
+
+                    <div class="glass-panel p-6">
+                        <h3 class="font-bold uppercase tracking-widest text-[10px] text-blue-400 mb-2">Note Teoriche</h3>
+                        <div id="infoPanel" class="text-slate-300 text-xs leading-relaxed font-medium"></div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-8 glass-panel p-6 flex flex-col min-h-[500px]">
+                    <div class="flex justify-between items-center mb-6">
+                        <span class="text-white font-bold tracking-tight text-lg">Visualizzazione Asintotica</span>
+                        <div class="flex gap-4">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                                <span class="text-[9px] text-slate-400 font-bold uppercase">a_n</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-0.5 bg-rose-500"></span>
+                                <span class="text-[9px] text-slate-400 font-bold uppercase">L</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex-1 relative">
+                        <canvas id="limitChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentViewId = 'home';
+        let isTransitioning = false;
+        let activeStudyCharts = [];
+
+        const studyData = {
+            'fondamentali': { 
+                title: "Limiti Fondamentali",
+                sections: [
+                    { 
+                        id: 'nepero', 
+                        title: "1. Il Limite del Numero di Nepero ($e$)", 
+                        color: "text-blue-400", 
+                        fn: (n) => Math.pow(1 + 1/n, n), 
+                        limitVal: Math.E,
+                        variants: {
+                            base: { name: "Base", fn: (n) => Math.pow(1 + 1/n, n), limitVal: Math.E },
+                            varA: { name: "Variante A (e^6)", fn: (n) => Math.pow(1 + 3/n, 2*n), limitVal: Math.pow(Math.E, 6) },
+                            varC: { name: "Variante C (1/e)", fn: (n) => n > 1 ? Math.pow(1 - 1/n, n) : 0, limitVal: 1/Math.E }
+                        },
+                        content: `
+                            <div class="space-y-6">
+                                <p class="text-sm leading-relaxed text-white">Questo limite nasce dal problema dell'interesse composto continuo ed è la base per tutte le funzioni esponenziali e logaritmiche.</p>
+                                
+                                <div class="bg-white/10 p-6 rounded-xl border border-white/20">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-blue-400 mb-2">Definizione Formale</p>
+                                    <div class="text-2xl py-2">$$\\lim_{n\\to\\infty} \\left(1 + \\frac{1}{n}\\right)^n = e$$</div>
+                                    <p class="text-xs opacity-80 mt-2 text-center">Dove $e \\approx 2,71828...$ è un numero irrazionale e trascendente.</p>
+                                </div>
+
+                                <div class="space-y-4">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-blue-400">Analisi del Comportamento Grafico e Matematico</p>
+                                    <p class="text-xs italic text-white/90">Analizzando la funzione $f(x) = (1 + \\frac{1}{x})^x$ per $x > 0$:</p>
+                                    <ul class="space-y-4 text-xs text-white/80">
+                                        <li><span class="text-blue-400 font-bold">Monotonia:</span> La successione $a_n = (1 + \\frac{1}{n})^n$ è strettamente crescente. Ciò significa che ogni termine è maggiore del precedente ($a_{n+1} > a_n$), ma non cresce all'infinito.</li>
+                                        <li><span class="text-blue-400 font-bold">Limitazione:</span> La funzione è limitata superiormente. Sebbene cresca sempre, non supera mai il valore di $e$. In termini tecnici, diciamo che $e$ è l'estremo superiore dell'insieme dei valori della successione.</li>
+                                        <li><span class="text-blue-400 font-bold">Asintoto Orizzontale:</span> Graficamente, la funzione presenta un asintoto orizzontale di equazione $y = e$ per $x \\to +\\infty$. La curva si avvicina sempre di più alla retta orizzontale senza mai toccarla o attraversarla.</li>
+                                        <li><span class="text-blue-400 font-bold">Concavità:</span> Per $x > 0$, la funzione è concava verso il basso, il che spiega perché "rallenta" la sua crescita man mano che si stabilizza verso il valore di $e$.</li>
+                                    </ul>
+                                </div>
+
+                                <div class="space-y-4">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-blue-400">Varianti Notevoli negli Esercizi</p>
+                                    <div class="grid grid-cols-1 gap-4">
+                                        <div class="bg-white/10 p-5 rounded-lg border border-white/10">
+                                            <p class="text-[9px] font-bold text-white mb-2 uppercase tracking-tighter">A. Generalizzazione con esponente e numeratore ($k$ e $p$)</p>
+                                            <p class="text-[11px] text-white/70 mb-3">Se al posto di 1 al numeratore o di n all'esponente compaiono delle costanti:</p>
+                                            <div class="text-sm">$$\\lim_{n\\to\\infty} \\left(1 + \\frac{k}{n}\\right)^{pn} = e^{k \\cdot p}$$</div>
+                                        </div>
+                                        <div class="bg-white/10 p-5 rounded-lg border border-white/10">
+                                            <p class="text-[9px] font-bold text-white mb-2 uppercase tracking-tighter">B. La forma infinitesima (per $x \\to 0$)</p>
+                                            <p class="text-[11px] text-white/70 mb-3">Effettuando un cambio di variabile ($x = 1/n$), il limite si presenta così:</p>
+                                            <div class="text-sm">$$\\lim_{x\\to 0} (1 + x)^{\\frac{1}{x}} = e$$</div>
+                                        </div>
+                                        <div class="bg-white/10 p-5 rounded-lg border border-white/10">
+                                            <p class="text-[9px] font-bold text-white mb-2 uppercase tracking-tighter">C. La variante con segno negativo</p>
+                                            <div class="text-sm mb-2">$$\\lim_{n\\to\\infty} \\left(1 - \\frac{1}{n}\\right)^n = \\frac{1}{e} = e^{-1}$$</div>
+                                            <p class="text-[11px] text-white/70 italic">In questo caso, la funzione è decrescente e tende all'asintoto $y \\approx 0,367$ dal basso.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `
+                    },
+                    { 
+                        id: 'geometrica', 
+                        title: "2. Successione Geometrica ($q^n$)", 
+                        color: "text-emerald-400", 
+                        fn: (n) => Math.pow(0.5, n), 
+                        limitVal: 0,
+                        variants: {
+                            converge: { name: "Converge (q=0.5)", fn: (n) => Math.pow(0.5, n), limitVal: 0 },
+                            diverge: { name: "Diverge (q=1.1)", fn: (n) => Math.pow(1.1, n), limitVal: Infinity },
+                            alternate: { name: "Alterna (q=-1)", fn: (n) => Math.pow(-1, n), limitVal: 0 }
+                        },
+                        content: `
+                            <div class="space-y-6">
+                                <div class="space-y-4">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">1. Proprietà di Monotonia e Limitatezza</p>
+                                    <p class="text-sm leading-relaxed text-white">La successione $a_n = q^n$ è un esempio perfetto di come il comportamento dinamico dipenda dai parametri strutturali ($q$):</p>
+                                    
+                                    <div class="bg-white/10 p-5 rounded-xl border border-white/10 space-y-4">
+                                        <p class="text-xs font-bold text-emerald-400 uppercase tracking-widest">Analisi della Monotonia:</p>
+                                        <ul class="space-y-3 text-xs text-white/80">
+                                            <li>• <span class="text-white font-semibold">Se $q > 1$:</span> la successione è strettamente crescente: $q^{n+1} > q^n$.</li>
+                                            <li>• <span class="text-white font-semibold">Se $0 < q < 1$:</span> la successione è strettamente decrescente: $q^{n+1} < q^n$.</li>
+                                            <li>• <span class="text-white font-semibold">Se $q = 1$ o $q = 0$:</span> la successione è costante (e quindi debolmente monotona).</li>
+                                            <li>• <span class="text-white font-semibold">Se $q < 0$:</span> la successione <span class="text-emerald-300">non è monotona</span>. I termini cambiano segno a ogni passo, impedendo qualsiasi relazione d'ordine costante tra $a_n$ e $a_{n+1}$.</li>
+                                        </ul>
+                                    </div>
+
+                                    <div class="bg-white/10 p-5 rounded-xl border border-white/10 space-y-4">
+                                        <p class="text-xs font-bold text-emerald-400 uppercase tracking-widest">Analisi della Limitatezza:</p>
+                                        <ul class="space-y-3 text-xs text-white/80">
+                                            <li>• <span class="text-white font-semibold">Se $|q| \\le 1$:</span> la successione è limitata, poiché i suoi termini appartengono sempre all'intervallo $[-1, 1]$.</li>
+                                            <li>• <span class="text-white font-semibold">Se $|q| > 1$:</span> la successione è illimitata. In particolare, se $q > 1$ diverge a $+\\infty$, mentre se $q \\le -1$ non ammette limite ma i suoi termini crescono in modulo verso l'infinito.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-4">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">2. Il ruolo di $(-1)^n$: l'altalena dei segni</p>
+                                    <p class="text-sm leading-relaxed text-white">La successione $a_n = (-1)^n$ è l'atomo fondamentale delle successioni alternate. La sua importanza risiede nel fatto che è il prototipo di successione che, pur essendo limitata (non scappa all'infinito), non converge.</p>
+                                    
+                                    <div class="bg-white/10 p-5 rounded-xl border border-white/10">
+                                        <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-300 mb-2 uppercase">Analisi dei Punti di Accumulazione</p>
+                                        <p class="text-xs text-white/80 leading-relaxed mb-4">In Analisi 1, un valore si dice punto di accumulazione (o valore limite) per una successione se esiste una sottosuccessione che converge a quel valore. Per $a_n = (-1)^n$:</p>
+                                        <ul class="space-y-2 text-xs text-white/80 list-disc list-inside mb-4">
+                                            <li>L'insieme dei valori limite è $\{ -1, 1 \}$.</li>
+                                            <li>Poiché l'insieme contiene più di un elemento, il limite globale non esiste.</li>
+                                        </ul>
+                                    </div>
+
+                                    <div class="bg-white/10 p-5 rounded-xl border border-white/10">
+                                        <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-300 mb-2 uppercase">Il concetto di Limite Superiore e Inferiore</p>
+                                        <p class="text-xs text-white/80 mb-4 leading-relaxed">Per gestire professionalmente l'irregolarità di $(-1)^n$, introduciamo il $\\limsup$ e il $\\liminf$:</p>
+                                        <div class="text-lg py-2 text-center">
+                                            $$\\liminf_{n \\to \\infty} (-1)^n = -1, \\quad \\limsup_{n \\to \\infty} (-1)^n = 1$$
+                                        </div>
+                                        <p class="text-xs text-white/70 mt-3 italic leading-relaxed">In un'ottica rigorosa, una successione ammette limite se e solo se $\\liminf = \\limsup$. In questo caso, essendo diversi, la successione è irregolare.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `
+                    },
+                    { 
+                        id: 'radice_a', 
+                        title: "3. Radice n-esima di una costante ($a > 0$)", 
+                        color: "text-amber-400", 
+                        fn: (n) => Math.pow(2, 1/n), 
+                        limitVal: 1,
+                        variants: {
+                            base: { name: "a = 2", fn: (n) => Math.pow(2, 1/n), limitVal: 1 },
+                            grande: { name: "a = 1000 (a > 1)", fn: (n) => Math.pow(1000, 1/n), limitVal: 1 },
+                            piccola: { name: "a = 0.1 (a < 1)", fn: (n) => Math.pow(0.1, 1/n), limitVal: 1 }
+                        },
+                        content: `
+                            <div class="space-y-6">
+                                <p class="text-sm leading-relaxed text-white">Il limite della radice $n$-esima di una costante positiva è uno dei risultati più eleganti dell'Analisi 1. Formalmente, si esprime come:</p>
+
+                                <div class="bg-white/10 p-6 rounded-xl border border-white/20 text-center">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-amber-400 mb-2">Definizione Formale</p>
+                                    <div class="text-2xl py-2">$$\\lim_{n \\to +\\infty} \\sqrt[n]{a} = 1 \\quad \\text{con } a \\in \\mathbb{R}, a > 0$$</div>
+                                    <p class="text-[10px] text-white/60 mt-2 italic">Non basta enunciare il risultato; occorre analizzare la struttura della successione distinguendo i casi strutturali.</p>
+                                </div>
+
+                                <div class="space-y-4">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-amber-400">1. Analisi dei casi per $a$</p>
+                                    <p class="text-xs text-white/80 mb-3 leading-relaxed">La successione $x_n = a^{1/n}$ si comporta in modo differente a seconda della posizione di $a$ rispetto all'unità:</p>
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div class="bg-white/10 p-4 rounded-lg border border-white/10">
+                                            <p class="text-[9px] font-bold text-white mb-1 uppercase tracking-tighter">Caso $a = 1$</p>
+                                            <p class="text-[11px] text-white/70">La successione è costante: $\{1, 1, 1, \\dots\}$. Il limite è banalmente $1$.</p>
+                                        </div>
+                                        <div class="bg-white/10 p-4 rounded-lg border border-white/10">
+                                            <p class="text-[9px] font-bold text-white mb-1 uppercase tracking-tighter">Caso $a > 1$</p>
+                                            <p class="text-[11px] text-white/70">La radice $n$-esima "comprime" il valore verso il basso. Ad esempio, se $a=1000$, $\\sqrt[n]{1000}$ decresce progressivamente verso $1$ senza mai toccarlo.</p>
+                                        </div>
+                                        <div class="bg-white/10 p-4 rounded-lg border border-white/10">
+                                            <p class="text-[9px] font-bold text-white mb-1 uppercase tracking-tighter">Caso $0 < a < 1$</p>
+                                            <p class="text-[11px] text-white/70">La radice $n$-esima "solleva" il valore verso l'alto. Ad esempio, se $a=0.1$, $\\sqrt[n]{0.1}$ cresce progressivamente verso $1$.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-4">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-amber-400">2. Il comportamento grafico: La "fuga" verso l'identità</p>
+                                    <p class="text-xs text-white/80 leading-relaxed italic mb-4">Immagina il piano cartesiano. Poiché stiamo parlando di successioni, il grafico non è una linea continua, ma una serie di punti isolati:</p>
+                                    <div class="space-y-4">
+                                        <div class="bg-white/5 p-4 rounded-lg border border-white/5">
+                                            <p class="text-[10px] font-bold text-amber-400 uppercase tracking-widest mb-1">Se $a > 1$ (Decadimento asintotico):</p>
+                                            <p class="text-[11px] text-white/80 leading-relaxed">Il primo punto si trova molto in alto. Man mano che $n$ cresce, la radice "schiaccia" il valore verso il basso. La curva dei punti è monotona decrescente e convessa.</p>
+                                        </div>
+                                        <div class="bg-white/5 p-4 rounded-lg border border-white/5">
+                                            <p class="text-[10px] font-bold text-amber-400 uppercase tracking-widest mb-1">Se $0 < a < 1$ (Crescita asintotica):</p>
+                                            <p class="text-[11px] text-white/80 leading-relaxed">Il primo punto si trova sotto la retta $y=1$. La radice "solleva" il valore. La successione è monotona crescente e concava, rallentando man mano che si avvicina al traguardo.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `
+                    },
+                    { 
+                        id: 'radice_n', 
+                        title: "4. Radice n-esima di $n$ ($\\sqrt[n]{n}$)", 
+                        color: "text-rose-400", 
+                        fn: (n) => Math.pow(n, 1/n), 
+                        limitVal: 1,
+                        variants: {
+                            base: { name: "Base (n^(1/n))", fn: (n) => Math.pow(n, 1/n), limitVal: 1 },
+                            potenza: { name: "Potenza (n^10)^(1/n)", fn: (n) => Math.pow(Math.pow(n, 10), 1/n), limitVal: 1 },
+                            polinomio: { name: "Polinomio (3n^5+7)^(1/n)", fn: (n) => Math.pow(3*Math.pow(n, 5) + 7, 1/n), limitVal: 1 }
+                        },
+                        content: `
+                            <div class="space-y-6">
+                                <p class="text-sm leading-relaxed text-white">Il limite $\\lim_{n \\to +\\infty} \\sqrt[n]{n} = 1$ è un risultato fondamentale che descrive la vittoria della "compressione" esercitata dall'indice della radice sulla crescita lineare della base.</p>
+
+                                <div class="bg-white/10 p-6 rounded-xl border border-white/20 text-center">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-rose-400 mb-2">Definizione Formale</p>
+                                    <div class="text-2xl py-2">$$\\lim_{n \\to +\\infty} \\sqrt[n]{n} = 1$$</div>
+                                    <p class="text-[10px] text-white/60 mt-2 leading-relaxed italic">Mentre nella radice di una costante la base è ferma, qui abbiamo una competizione tra due infiniti: la base $n$ ($+\\infty$) e l'indice $n$ ($1$).</p>
+                                </div>
+
+                                <div class="space-y-4 text-white/80 leading-relaxed">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-rose-400">1. Il comportamento grafico: La "Gobba"</p>
+                                    <p class="text-xs mb-3">A differenza di $\\sqrt[n]{a}$, questa successione <span class="text-rose-300">non è monotona</span> su tutto il dominio $\\mathbb{N}$. Osservando i primi termini:</p>
+                                    <div class="bg-white/10 p-4 rounded-xl border border-white/10 grid grid-cols-2 gap-3 text-center text-[10px] font-mono">
+                                        <div class="p-2 bg-white/5 rounded">$n=1 \\to 1$</div>
+                                        <div class="p-2 bg-white/5 rounded">$n=2 \\to \\approx 1,414$</div>
+                                        <div class="p-2 bg-white/5 rounded">$n=3 \\to \\approx 1,442$</div>
+                                        <div class="p-2 bg-white/5 rounded">$n=4 \\to \\approx 1,414$</div>
+                                    </div>
+                                    <p class="text-[11px] mt-4 leading-relaxed">La funzione reale associata $f(x) = x^{1/x}$ ha il suo massimo assoluto in $x = e \\approx 2,718$. Poiché $n$ deve essere intero, il massimo della successione si raggiunge in <span class="text-white font-bold">$n=3$</span>. Da lì in poi, la successione è strettamente decrescente e limitata inferiormente da 1.</p>
+                                </div>
+
+                                <div class="space-y-4">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider text-rose-400">2. Varianti comuni negli esercizi</p>
+                                    <div class="space-y-4 text-xs">
+                                        <div class="bg-white/10 p-5 rounded-lg border border-white/10">
+                                            <p class="text-[9px] font-bold text-white mb-2 uppercase tracking-tighter">A. Potenze del termine interno: $\\sqrt[n]{n^k}$</p>
+                                            <p class="text-white/70 leading-relaxed mb-3">Esempio: $\\lim_{n \\to +\\infty} \\sqrt[n]{n^{1000}}$. Logica: puoi riscriverlo come $(\\sqrt[n]{n})^{1000}$. Poiché la base tende a $1$, avremo $1^{1000} = 1$.</p>
+                                            <p class="text-[9px] text-rose-300 font-bold uppercase tracking-widest">Qualsiasi potenza finita di $n$ viene "annullata" dalla radice.</p>
+                                        </div>
+                                        <div class="bg-white/10 p-5 rounded-lg border border-white/10">
+                                            <p class="text-[9px] font-bold text-white mb-2 uppercase tracking-tighter">B. Radice di un Polinomio: $\\sqrt[n]{P(n)}$</p>
+                                            <p class="text-white/70 leading-relaxed mb-3">Sotto la radice raccogliamo il termine dominante $n^k$. Analizzando il rapporto, otterremo sempre il prodotto tra il limite notevole di $n$ (che tende a 1) e quello della costante (che tende a 1).</p>
+                                            <p class="text-[9px] text-rose-300 font-bold uppercase tracking-widest text-center mt-2">La radice $n$-esima di un qualsiasi polinomio tende sempre a 1.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `
+                    },
+                    { id: 'logaritmica', title: "5. Limite della funzione logaritmica", color: "text-purple-400", fn: (n) => Math.log(1 + 1/n) / (1/n), limitVal: 1 }
+                ]
+            },
+            'gerarchia': { title: "Gerarchia degli Infiniti", content: "La gerarchia degli infiniti stabilisce un ordine di velocità di crescita tra successioni che tendono a infinito. Tipicamente: Logaritmi < Potenze < Esponenziali < Fattoriali." },
+            'goniometrici': { title: "Limiti Goniometrici", content: "Questi limiti analizzano il rapporto tra funzioni circolari e il loro argomento quando quest'ultimo tende a zero. Il limite sin(x)/x è il più celebre." },
+            'esp-log': { title: "Limiti Esponenziali e Logaritmici", content: "Fondamentali per risolvere forme indeterminate come [0/0] coinvolgenti funzioni trascendenti. Derivano direttamente dal limite di Nepero." },
+            'potenza-iper': { title: "Limiti di Potenza e Iperbolici", content: "Generalizzano i risultati precedenti per esponenti reali qualunque e introducono le funzioni iperboliche (sinh, cosh)." }
+        };
+
+        const limits = {
+            nepero: { formula: "\\lim_{n\\to\\infty} \\left(1 + \\frac{1}{n}\\right)^n", result: "e", info: "La successione di Nepero converge al valore e ≈ 2.718.", fn: (n) => Math.pow(1 + 1/n, n), limitVal: Math.E },
+            geometrica: { formula: "\\lim_{n\\to\\infty} (0.5)^n", result: "0", info: "Per ragioni |q| < 1, la successione geometrica tende a zero.", fn: (n) => Math.pow(0.5, n), limitVal: 0 },
+            radice_a: { formula: "\\lim_{n\\to\\infty} 2^{1/n}", result: "1", info: "La radice n-esima di una costante positiva tende a 1.", fn: (n) => Math.pow(2, 1/n), limitVal: 1 },
+            radice_n: { formula: "\\lim_{n\\to\\infty} \\sqrt[n]{n}", result: "1", info: "La radice n-esima di n tende asintoticamente a 1.", fn: (n) => Math.pow(n, 1/n), limitVal: 1 },
+            seno: { formula: "\\lim_{n\\to\\infty} \\frac{\\sin(1/n)}{1/n}", result: "1", info: "Il seno di un infinitesimo è asintotico all'infinitesimo stesso.", fn: (n) => Math.sin(1/n) / (1/n), limitVal: 1 },
+            coseno: { formula: "\\lim_{n\\to\\infty} \\frac{1 - \\cos(1/n)}{(1/n)^2}", result: "1/2", info: "Indica l'approssimazione parabolica del coseno vicino a zero.", fn: (n) => (1 - Math.cos(1/n)) / Math.pow(1/n, 2), limitVal: 0.5 },
+            tangente: { formula: "\\lim_{n\\to\\infty} \\frac{\\tan(1/n)}{1/n}", result: "1", info: "La tangente è asintotica al suo argomento nell'origine.", fn: (n) => Math.tan(1/n) / (1/n), limitVal: 1 },
+            ln: { formula: "\\lim_{n\\to\\infty} \\frac{\\ln(1 + 1/n)}{1/n}", result: "1", info: "Approssimazione lineare del logaritmo naturale vicino a 1.", fn: (n) => Math.log(1 + 1/n) / (1/n), limitVal: 1 },
+            exp: { formula: "\\lim_{n\\to\\infty} \\frac{e^{1/n} - 1}{1/n}", result: "1", info: "Linearizzazione della funzione esponenziale nell'origine.", fn: (n) => (Math.exp(1/n) - 1) / (1/n), limitVal: 1 },
+            potenza: { formula: "\\lim_{n\\to\\infty} \\frac{(1 + 1/n)^2 - 1}{1/n}", result: "2", info: "Converge a 2, seguendo la formula (1+x)^alpha - 1 / x -> alpha.", fn: (n) => (Math.pow(1 + 1/n, 2) - 1) / (1/n), limitVal: 2 }
+        };
+
+        let chart;
+        const ctx = document.getElementById('limitChart').getContext('2d');
+
+        function initChart() {
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{ label: 'Successione', data: [], borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.05)', borderWidth: 3, pointRadius: 2, tension: 0.3, fill: true }, 
+                               { label: 'Limite L', data: [], borderColor: '#f43f5e', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    animation: { x: { type: 'number', duration: 0, delay: (c) => c.index * 15 }, y: { type: 'number', duration: 800, delay: (c) => c.index * 15 } },
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        x: { type: 'linear', min: 1, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }, 
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } } 
+                    }
+                }
+            });
+        }
+
+        async function showView(viewId, direction = 'up') {
+            if (isTransitioning || currentViewId === viewId) return;
+            isTransitioning = true;
+
+            const currentEl = document.getElementById(currentViewId + 'View');
+            const nextEl = document.getElementById(viewId + 'View');
+            const btnBack = document.getElementById('btnBack');
+
+            if (['study', 'app', 'studyDetail'].includes(viewId)) btnBack.classList.remove('hidden');
+            else btnBack.classList.add('hidden');
+
+            nextEl.style.display = (viewId === 'home') ? 'flex' : 'block';
+            nextEl.classList.remove('slide-up', 'slide-down', 'slide-center');
+            nextEl.classList.add(direction === 'up' ? 'slide-down' : 'slide-up');
+
+            setTimeout(() => {
+                currentEl.classList.remove('slide-center');
+                currentEl.classList.add(direction === 'up' ? 'slide-up' : 'slide-down');
+
+                nextEl.classList.remove('slide-up', 'slide-down');
+                nextEl.classList.add('slide-center');
+
+                setTimeout(async () => {
+                    currentEl.style.display = 'none';
+                    currentViewId = viewId;
+                    isTransitioning = false;
+                    
+                    if(viewId === 'app') { 
+                        if(!chart) initChart(); 
+                        updateLimit(); 
+                    }
+                    if(viewId === 'studyDetail') {
+                         initStudyCharts();
+                         if (window.MathJax) await MathJax.typesetPromise();
+                    }
+                }, 700);
+            }, 50);
+        }
+
+        function goBack() {
+            if (currentViewId === 'studyDetail') {
+                activeStudyCharts.forEach(c => c.destroy());
+                activeStudyCharts = [];
+                showView('study', 'down');
+            }
+            else showView('home', 'down');
+        }
+
+        // Gestione Varianti Grafico
+        window.updateStudyVariant = function(sectionId, variantKey, btn) {
+            const chartObj = activeStudyCharts.find(c => c.canvas.id === `chart-${sectionId}`);
+            if (!chartObj) return;
+
+            const sec = studyData.fondamentali.sections.find(s => s.id === sectionId);
+            const variant = sec.variants[variantKey];
+            
+            // Aggiorna stile bottoni
+            const container = btn.parentElement;
+            container.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Rigenera punti
+            const points = [], limitLine = [];
+            for (let n = 1; n <= 40; n++) {
+                points.push({ x: n, y: variant.fn(n) });
+                limitLine.push({ x: n, y: variant.limitVal });
+            }
+
+            chartObj.data.datasets[0].data = points;
+            chartObj.data.datasets[1].data = limitLine;
+            chartObj.update();
+        };
+
+        async function openStudyCategory(catKey, cardEl) {
+            if (isTransitioning) return;
+            const rect = cardEl.getBoundingClientRect();
+            const clone = cardEl.cloneNode(true);
+            
+            Object.assign(clone.style, {
+                position: 'fixed', top: rect.top + 'px', left: rect.left + 'px',
+                width: rect.width + 'px', height: rect.height + 'px',
+                zIndex: '9999', transition: 'all 0.7s cubic-bezier(0.7, 0, 0.3, 1)', margin: '0'
+            });
+            document.body.appendChild(clone);
+
+            const category = studyData[catKey];
+            document.getElementById('categoryTitle').innerText = category.title;
+            
+            let contentHTML = "";
+            if (catKey === 'fondamentali') {
+                contentHTML = `<div class="flashcard-section">`;
+                category.sections.forEach((sec, index) => {
+                    const isOdd = index % 2 !== 0;
+                    const rowClass = isOdd ? "flashcard-row flashcard-row-reverse" : "flashcard-row";
+                    
+                    contentHTML += `
+                        <div class="${rowClass}">
+                            <div class="flashcard-theory-col glass-panel p-10 flex flex-col justify-center">
+                                <h3 class="text-3xl font-extrabold ${sec.color} mb-8">${sec.title}</h3>
+                                <div id="content-${sec.id}" class="text-slate-100 font-medium">
+                                    ${sec.content || `
+                                        <div class="h-24 bg-white/5 rounded-xl animate-pulse flex items-center justify-center text-slate-500 text-sm">
+                                            In attesa della spiegazione dettagliata...
+                                        </div>
+                                    `}
+                                </div>
+                            </div>
+                            <div class="flashcard-graph-col glass-panel p-6 min-h-[400px] flex flex-col self-center">
+                                <div class="flex justify-between items-center mb-6 px-2">
+                                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Analisi Grafica</span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></span>
+                                </div>
+                                <div class="flex-1 relative mb-4">
+                                    <canvas id="chart-${sec.id}"></canvas>
+                                </div>
+                                ${sec.variants ? `
+                                    <div class="flex flex-wrap gap-2 justify-center pt-2">
+                                        ${Object.keys(sec.variants).map((vKey, i) => `
+                                            <button onclick="updateStudyVariant('${sec.id}', '${vKey}', this)" 
+                                                    class="variant-btn ${i === 0 ? 'active' : ''} px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider rounded-lg">
+                                                ${sec.variants[vKey].name}
+                                            </button>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                contentHTML += `</div>`;
+            } else {
+                contentHTML = `<div class="glass-panel p-10 text-slate-100 leading-relaxed">${category.content}</div>`;
+            }
+            
+            document.getElementById('categoryContent').innerHTML = contentHTML;
+
+            requestAnimationFrame(() => {
+                clone.classList.add('card-zooming');
+                setTimeout(async () => {
+                    await showView('studyDetail', 'up');
+                    setTimeout(() => clone.remove(), 800);
+                }, 150);
+            });
+        }
+
+        function initStudyCharts() {
+            const category = studyData['fondamentali'];
+            if(!category.sections) return;
+
+            category.sections.forEach(sec => {
+                const canvas = document.getElementById(`chart-${sec.id}`);
+                if (!canvas) return;
+                
+                const points = [], limitLine = [];
+                for (let n = 1; n <= 40; n++) {
+                    points.push({ x: n, y: sec.fn(n) });
+                    limitLine.push({ x: n, y: sec.limitVal });
+                }
+
+                const c = new Chart(canvas.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        datasets: [
+                            { data: points, borderColor: '#3b82f6', borderWidth: 2.5, pointRadius: 2, tension: 0.3, fill: false },
+                            { data: limitLine, borderColor: '#f43f5e', borderWidth: 1.5, borderDash: [6, 4], pointRadius: 0, fill: false }
+                        ]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { 
+                            x: { type: 'linear', grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#64748b', font: { size: 9 } } }, 
+                            y: { 
+                                grid: { color: 'rgba(255,255,255,0.03)' }, 
+                                ticks: { color: '#94a3b8', font: { size: 9 } } 
+                            } 
+                        }
+                    }
+                });
+                activeStudyCharts.push(c);
+            });
+        }
+
+        async function updateLimit() {
+            const key = document.getElementById('limitSelector').value;
+            const limit = limits[key];
+            document.getElementById('formulaDisplay').innerHTML = `$$\\lim_{n\\to\\infty} ${limit.formula.split('=')[0].replace('lim_{n\\to\\infty}', '')} = ?$$`;
+            if (window.MathJax) await MathJax.typesetPromise();
+            document.getElementById('infoPanel').innerText = limit.info;
+            if(chart) {
+                chart.data.datasets[0].data = [];
+                chart.data.datasets[1].data = [];
+                chart.update('none');
+            }
+        }
+
+        function checkResult() {
+            const limit = limits[document.getElementById('limitSelector').value];
+            const userVal = document.getElementById('userInput').value.trim().toLowerCase();
+            const feedback = document.getElementById('feedback');
+            if (userVal === limit.result.toLowerCase() || (limit.result === "1/2" && ["0.5", "0,5"].includes(userVal))) {
+                feedback.innerText = "✓ CORRETTO";
+                feedback.className = "text-xs font-bold text-green-400 tracking-widest";
+                showGraph(limit);
+            } else {
+                feedback.innerText = "✕ ERRATO";
+                feedback.className = "text-xs font-bold text-rose-500 tracking-widest";
+            }
+        }
+
+        function showGraph(limit) {
+            const points = [], limitLine = [];
+            for (let n = 1; n <= 60; n++) {
+                points.push({ x: n, y: limit.fn(n) });
+                limitLine.push({ x: n, y: limit.limitVal });
+            }
+            chart.data.datasets[0].data = points;
+            chart.data.datasets[1].data = limitLine;
+            chart.update();
+        }
+
+        window.onload = () => { 
+            if(currentViewId === 'app') initChart(); 
+            updateLimit(); 
+        };
+    </script>
+</body>
+</html>

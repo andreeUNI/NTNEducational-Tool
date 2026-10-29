@@ -1,0 +1,1885 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algebra Relazionale - Educational Tool</title>
+    
+    <!-- Google Fonts: Poppins per un look moderno e geometrico -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* === VARIABILI GLOBALI === */
+        :root {
+            --bg-start: #060b19; 
+            --bg-end: #000000;   
+            --accent-blue: #00e5ff; 
+            --accent-purple: #a855f7;
+            --accent-green: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-red: #ef4444;
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --transition-smooth: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        /* === RESET & BASE === */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* === COMPONENTI DI LAYOUT === */
+        .glass-effect {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+        }
+
+        /* Navigazione Superiore */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 2rem 3rem;
+            display: flex;
+            justify-content: flex-end;
+            z-index: 100;
+        }
+
+        .home-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            color: var(--text-main);
+        }
+
+        .home-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .home-btn svg {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+        }
+
+        /* Bottone Indietro */
+        .back-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            color: var(--text-main);
+            margin-right: auto;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .back-btn svg {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+        }
+
+        /* === SPA TRANSITIONS === */
+        .view-section {
+            transition: opacity 0.5s ease;
+            opacity: 1;
+        }
+        
+        .fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* === HOMEPAGE (VIEW) === */
+        #view-home {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .badge-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 2.5rem;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        .badge {
+            padding: 0.4rem 1.2rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            text-transform: lowercase;
+            letter-spacing: 0.25em;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .author {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 300;
+            opacity: 0.8;
+        }
+
+        .hero-title {
+            font-size: clamp(3rem, 6vw, 5rem);
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.02em;
+            animation: fadeInUp 1s ease-out 0.2s both;
+        }
+
+        .hero-title .line-1 {
+            display: block;
+            font-weight: 300;
+            color: var(--text-main);
+            margin-bottom: 0.2rem;
+        }
+
+        .hero-title .line-2 {
+            display: block;
+            font-weight: 800;
+            color: var(--accent-blue);
+            text-shadow: 0 0 40px rgba(0, 229, 255, 0.2);
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1rem, 2vw, 1.25rem);
+            color: var(--text-muted);
+            max-width: 600px;
+            margin-bottom: 3.5rem;
+            line-height: 1.6;
+            font-weight: 300;
+            animation: fadeInUp 1s ease-out 0.4s both;
+        }
+
+        .btn-outline {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem 3.5rem;
+            border-radius: 9999px;
+            background: transparent;
+            border: 2px solid var(--accent-blue);
+            color: var(--accent-blue);
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            text-transform: uppercase;
+            animation: fadeInUp 1s ease-out 0.6s both;
+        }
+
+        .btn-outline:hover {
+            background: rgba(0, 229, 255, 0.1);
+            color: #ffffff;
+            box-shadow: 0 0 25px rgba(0, 229, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-outline:active {
+            transform: translateY(1px);
+        }
+
+        /* === AREA DI APPRENDIMENTO (VIEW 2) === */
+        #view-app {
+            display: none;
+            padding: 8rem 2rem 4rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .app-header {
+            text-align: center;
+            margin-bottom: 5rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .app-header h2 {
+            font-size: clamp(2.5rem, 4vw, 3.5rem);
+            font-weight: 300;
+            margin-bottom: 0.5rem;
+        }
+
+        .text-accent {
+            color: var(--accent-blue);
+            font-weight: 700;
+        }
+
+        .app-header p {
+            color: var(--text-muted);
+            font-weight: 300;
+            font-size: 1.1rem;
+        }
+
+        /* Layout Categorie */
+        .category-section {
+            display: flex;
+            gap: 2.5rem;
+            margin-bottom: 4rem;
+            align-items: stretch;
+            animation: fadeInUp 0.8s ease-out both;
+        }
+
+        .category-section:nth-child(1) { animation-delay: 0.1s; }
+        .category-section:nth-child(2) { animation-delay: 0.3s; }
+        .category-section:nth-child(3) { animation-delay: 0.5s; }
+
+        .category-banner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-right: 2.5rem;
+            border-right: 1px solid var(--glass-border);
+            width: 80px;
+            flex-shrink: 0;
+        }
+
+        .category-banner span {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            color: rgba(255, 255, 255, 0.4);
+            letter-spacing: 0.4em;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        /* Griglia Flashcard */
+        .flashcards-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            flex-grow: 1;
+        }
+
+        .flashcard {
+            border-radius: 16px;
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            transition: var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .flashcard::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 16px;
+            border: 1px solid transparent;
+            transition: var(--transition-smooth);
+            pointer-events: none;
+        }
+
+        .flashcard:hover {
+            transform: translateY(-8px);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .flashcard:hover::before {
+            border-color: rgba(0, 229, 255, 0.4);
+            box-shadow: inset 0 0 20px rgba(0, 229, 255, 0.1),
+                        0 0 20px rgba(0, 229, 255, 0.2);
+        }
+        
+        /* Nessun effetto hover per la card che contiene pulsanti interni */
+        #card-outer-join {
+            cursor: default;
+        }
+        #card-outer-join:hover {
+            transform: none;
+            background: var(--glass-bg);
+        }
+        #card-outer-join:hover::before {
+            border-color: transparent;
+            box-shadow: none;
+        }
+
+        .card-label {
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 0.15em;
+            padding: 0.3rem 0.8rem;
+            border-radius: 9999px;
+            align-self: flex-start;
+            text-transform: uppercase;
+        }
+
+        .lbl-insiemistica { color: var(--accent-purple); background: rgba(168, 85, 247, 0.15); }
+        .lbl-base { color: var(--accent-green); background: rgba(16, 185, 129, 0.15); }
+        .lbl-joins { color: var(--accent-amber); background: rgba(245, 158, 11, 0.15); }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-title .symbol {
+            font-weight: 300;
+            color: var(--accent-blue);
+            font-family: serif;
+            font-size: 1.8rem;
+        }
+
+        .card-desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            font-weight: 300;
+        }
+
+        /* Stili Bottoni Outer Join UI */
+        .oj-btn-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: auto; 
+            padding-top: 1rem;
+        }
+
+        .oj-btn {
+            flex: 1;
+            padding: 0.6rem 0;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .oj-btn:hover {
+            background: rgba(245, 158, 11, 0.2); 
+            color: #fff;
+            border-color: var(--accent-amber);
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+            transform: translateY(-2px);
+        }
+
+        /* === INTERACTIVE WORKSPACE (VIEW 3) === */
+        #view-workspace {
+            display: none;
+            padding: 8rem 2rem 4rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .workspace-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            animation: fadeInDown 0.6s ease-out;
+        }
+
+        .workspace-header h2 {
+            font-size: clamp(2rem, 3.5vw, 3rem);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .workspace-header .symbol {
+            color: var(--accent-blue);
+            font-family: serif;
+            font-size: 1.2em;
+        }
+
+        /* FASE D: Pannello Teorico */
+        .theory-panel {
+            max-width: 800px;
+            margin: 1.5rem auto 0;
+            padding: 1.5rem 2rem;
+            border-radius: 12px;
+            border-left: 4px solid var(--accent-blue);
+            text-align: left;
+            background: rgba(0, 229, 255, 0.05);
+            animation: fadeInUp 0.8s ease-out 0.1s both;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .theory-icon {
+            font-size: 1.5rem;
+            margin-top: 0.1rem;
+        }
+
+        .theory-panel p {
+            color: var(--text-main);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin: 0;
+            font-weight: 300;
+        }
+
+        .workspace-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            margin-top: 2rem;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+        
+        /* === DIAGRAMMI DI VENN (Fase 6) === */
+        .venn-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1rem;
+            padding: 1.5rem;
+            border-radius: 16px;
+        }
+
+        .venn-svg {
+            width: 300px;
+            height: 180px;
+            overflow: visible;
+        }
+
+        .venn-part {
+            transition: all 0.5s ease;
+            stroke-width: 2;
+        }
+
+        /* Stati di base dei Venn */
+        #venn-part-a { fill: rgba(0, 229, 255, 0.05); stroke: var(--accent-blue); }
+        #venn-part-b { fill: rgba(168, 85, 247, 0.05); stroke: var(--accent-purple); }
+        #venn-part-ab { fill: rgba(255, 255, 255, 0.02); stroke: rgba(255,255,255,0.2); }
+        
+        .venn-label {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            fill: var(--text-muted);
+            transition: var(--transition-smooth);
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+
+        /* Stati Attivi (Glow) dei Venn */
+        .glow-blue { 
+            fill: rgba(0, 229, 255, 0.4) !important; 
+            stroke: #fff !important;
+            filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.6));
+        }
+        .glow-purple { 
+            fill: rgba(168, 85, 247, 0.4) !important; 
+            stroke: #fff !important;
+            filter: drop-shadow(0 0 15px rgba(168, 85, 247, 0.6));
+        }
+        .glow-green { 
+            fill: rgba(16, 185, 129, 0.6) !important; 
+            stroke: #fff !important;
+            filter: drop-shadow(0 0 20px rgba(16, 185, 129, 0.8));
+        }
+        .glow-red { 
+            fill: rgba(239, 68, 68, 0.6) !important; 
+            stroke: #fff !important;
+            filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.8));
+        }
+        .label-active { fill: #fff !important; font-size: 16px; }
+
+        /* TOP AREA: Input */
+        .workspace-inputs {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+        }
+
+        .table-box {
+            flex: 1;
+            border-radius: 16px;
+            padding: 1.5rem;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .table-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            text-align: center;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 0.5rem;
+        }
+
+        .table-title .subtitle {
+            font-size: 0.7rem; 
+            color: var(--text-muted); 
+            text-transform: none;
+        }
+
+        .table-content-placeholder {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.2);
+            font-style: italic;
+            font-size: 0.9rem;
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            transition: var(--transition-smooth);
+        }
+
+        /* MIDDLE AREA: Console di Comando */
+        .workspace-console {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .console-title {
+            color: var(--text-main);
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .console-hint {
+            color: var(--accent-amber);
+            font-weight: 400;
+            font-size: 0.85rem;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .console-input-area {
+            display: flex;
+            gap: 1rem;
+            align-items: stretch;
+        }
+
+        .console-textarea {
+            flex-grow: 1;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 1rem;
+            color: var(--text-main);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.1rem;
+            resize: none;
+            min-height: 80px;
+            transition: var(--transition-smooth);
+        }
+
+        .console-textarea:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+        }
+
+        /* Stati Validazione Console */
+        .console-textarea.success {
+            border-color: var(--accent-green);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+        }
+
+        .console-textarea.error {
+            border-color: var(--accent-red);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-execute {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0 2rem;
+            border-radius: 8px;
+            background: rgba(0, 229, 255, 0.1);
+            border: 1px solid var(--accent-blue);
+            color: var(--accent-blue);
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            text-transform: uppercase;
+        }
+
+        .btn-execute:hover {
+            background: var(--accent-blue);
+            color: #000;
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.4);
+            transform: scale(1.02);
+        }
+
+        .console-feedback-msg {
+            font-size: 0.9rem;
+            font-weight: 500;
+            min-height: 1.2rem;
+            transition: var(--transition-smooth);
+            opacity: 0;
+        }
+
+        .console-feedback-msg.show {
+            opacity: 1;
+        }
+
+        .text-success { color: var(--accent-green); }
+        .text-error { color: var(--accent-red); }
+
+        /* BOTTOM AREA: Output */
+        .workspace-output {
+            display: flex;
+            justify-content: center;
+        }
+
+        .output-box {
+            width: 100%;
+            max-width: 900px;
+            min-height: 300px;
+            border-color: rgba(0, 229, 255, 0.3);
+            background: rgba(0, 229, 255, 0.02);
+        }
+
+        .output-box .table-title {
+            color: var(--accent-blue);
+            border-bottom-color: rgba(0, 229, 255, 0.2);
+        }
+
+        /* === STILI TABELLE HTML E ANIMAZIONI RIGHE === */
+        .glass-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            text-align: left;
+            margin-top: 0.5rem;
+        }
+
+        .glass-table th, .glass-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            white-space: nowrap;
+        }
+
+        .glass-table th {
+            color: var(--accent-blue);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.8rem;
+            border-bottom: 1px solid rgba(0, 229, 255, 0.3);
+        }
+
+        .glass-table tbody tr {
+            transition: all 0.4s ease;
+        }
+
+        .glass-table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .glass-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Classi Animazione Righe Tabella */
+        .row-highlight-match {
+            background: rgba(16, 185, 129, 0.2) !important;
+            box-shadow: inset 0 0 15px rgba(16, 185, 129, 0.4);
+            transform: scale(1.02);
+            z-index: 10;
+            position: relative;
+        }
+        .row-color-a {
+            background: rgba(0, 229, 255, 0.2) !important;
+            box-shadow: inset 0 0 15px rgba(0, 229, 255, 0.4);
+            transform: scale(1.02);
+            z-index: 10;
+            position: relative;
+        }
+        .row-color-b {
+            background: rgba(168, 85, 247, 0.2) !important;
+            box-shadow: inset 0 0 15px rgba(168, 85, 247, 0.4);
+            transform: scale(1.02);
+            z-index: 10;
+            position: relative;
+        }
+        .row-duplicate {
+            background: rgba(239, 68, 68, 0.25) !important;
+            box-shadow: inset 0 0 15px rgba(239, 68, 68, 0.5);
+            transform: scale(1.02);
+            z-index: 10;
+            position: relative;
+        }
+        .row-slide-in {
+            animation: slideInDownRow 0.5s ease-out forwards;
+        }
+
+        /* === ANIMAZIONI OPERATORI BASE === */
+        .row-scan-active {
+            background: rgba(245, 158, 11, 0.3) !important;
+            transform: scale(1.03);
+            z-index: 10;
+            position: relative;
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+        }
+        .row-scan-fade {
+            opacity: 0.2;
+            filter: grayscale(100%);
+        }
+        .col-fade-out {
+            opacity: 0.2;
+            filter: grayscale(100%);
+            transition: all 0.5s ease;
+        }
+        .col-highlight {
+            background: rgba(0, 229, 255, 0.15) !important;
+            box-shadow: inset 0 0 15px rgba(0, 229, 255, 0.3);
+            transition: all 0.5s ease;
+        }
+        .th-renaming-glow {
+            color: var(--accent-amber) !important;
+            text-shadow: 0 0 15px var(--accent-amber);
+            transform: scale(1.1);
+            transition: all 0.5s ease;
+        }
+        .th-key-highlight {
+            color: var(--accent-amber) !important;
+            text-shadow: 0 0 15px var(--accent-amber);
+            border-bottom: 2px solid var(--accent-amber) !important;
+        }
+
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            flex-grow: 1;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-blue) rgba(0,0,0,0.2);
+        }
+        
+        .table-responsive::-webkit-scrollbar { height: 6px; }
+        .table-responsive::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 4px; }
+        .table-responsive::-webkit-scrollbar-thumb { background-color: var(--accent-blue); border-radius: 4px; }
+
+        /* === ANIMAZIONI === */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideInDownRow {
+            from { opacity: 0; transform: translateY(-15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulseMerge {
+            0% { background: rgba(245, 158, 11, 0.5); transform: scale(1.05); }
+            100% { background: transparent; transform: scale(1); }
+        }
+
+        /* === SFONDO ANIMATO === */
+        .animated-background {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            overflow: hidden;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .blob {
+            position: absolute;
+            filter: blur(120px);
+            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+            animation: moveBlob infinite linear;
+        }
+
+        .blob-1 { width: 60vw; height: 60vw; top: -20%; left: -10%; background: rgba(220, 20, 60, 0.15); animation-duration: 35s; }
+        .blob-2 { width: 50vw; height: 50vw; bottom: -20%; right: -10%; background: rgba(255, 0, 0, 0.12); animation-duration: 45s; animation-direction: reverse; }
+        .blob-3 { width: 45vw; height: 45vw; top: 20%; left: 30%; background: rgba(178, 34, 34, 0.1); animation-duration: 55s; }
+
+        @keyframes moveBlob {
+            0% { transform: rotate(0deg) scale(1) translate(0, 0); }
+            33% { transform: rotate(120deg) scale(1.1) translate(5%, 10%); }
+            66% { transform: rotate(240deg) scale(0.9) translate(-10%, 5%); }
+            100% { transform: rotate(360deg) scale(1) translate(0, 0); }
+        }
+
+        /* === RESPONSIVE === */
+        @media (max-width: 1024px) {
+            .flashcards-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            header { padding: 1.5rem; }
+            .hero-subtitle { padding: 0 1rem; }
+            
+            .category-section { flex-direction: column; gap: 1.5rem; }
+            .category-banner {
+                width: 100%; border-right: none; border-bottom: 1px solid var(--glass-border);
+                padding-right: 0; padding-bottom: 1rem;
+            }
+            .category-banner span { writing-mode: horizontal-tb; transform: rotate(0); letter-spacing: 0.2em; }
+            .flashcards-grid { grid-template-columns: 1fr; }
+            
+            .workspace-inputs { flex-direction: column; }
+            .console-input-area { flex-direction: column; }
+            .btn-execute { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="animated-background">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <header style="justify-content: space-between;">
+        <div class="back-btn glass-effect fade-out" id="btn-back" title="Torna alle Categorie" onclick="goBack()" style="display: none;">
+            <svg viewBox="0 0 24 24">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </div>
+
+        <div class="home-btn glass-effect" title="Torna alla Home" onclick="goHome()" style="margin-left: auto;">
+            <svg viewBox="0 0 24 24">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+        </div>
+    </header>
+
+    <main id="app-container">
+        
+        <!-- VISTA 1: HOMEPAGE -->
+        <section id="view-home" class="view-section">
+            <div class="badge-container">
+                <div class="badge glass-effect">educational tool</div>
+                <div class="author">By Andrea Pennisi</div>
+            </div>
+
+            <h1 class="hero-title">
+                <span class="line-1">Applicazione</span>
+                <span class="line-2">ALGEBRA RELAZIONALE</span>
+            </h1>
+
+            <p class="hero-subtitle">
+                Uno strumento interattivo progettato per esplorare, comprendere e testare le operazioni fondamentali e derivate dell'algebra relazionale su basi di dati.
+            </p>
+
+            <button class="btn-outline" onclick="startApp()">Applica</button>
+        </section>
+
+
+        <!-- VISTA 2: AREA DI APPRENDIMENTO -->
+        <section id="view-app" class="view-section fade-out">
+            <div class="app-header">
+                <h2>Area di <span class="text-accent">Apprendimento</span></h2>
+                <p>Esplora e padroneggia gli operatori organizzati per categorie semantiche.</p>
+            </div>
+
+            <div class="category-section">
+                <div class="category-banner"><span>INSIEMISTICA</span></div>
+                <div class="flashcards-grid">
+                    <div class="flashcard glass-effect">
+                        <span class="card-label lbl-insiemistica">INSIEMISTICA</span>
+                        <h3 class="card-title">Unione <span class="symbol">&cup;</span></h3>
+                        <p class="card-desc">Restituisce una relazione contenente tutte le tuple presenti in due relazioni compatibili.</p>
+                    </div>
+                    <div class="flashcard glass-effect">
+                        <span class="card-label lbl-insiemistica">INSIEMISTICA</span>
+                        <h3 class="card-title">Intersezione <span class="symbol">&cap;</span></h3>
+                        <p class="card-desc">Restituisce solo le tuple presenti contemporaneamente in entrambe le relazioni.</p>
+                    </div>
+                    <div class="flashcard glass-effect">
+                        <span class="card-label lbl-insiemistica">INSIEMISTICA</span>
+                        <h3 class="card-title">Differenza <span class="symbol">-</span></h3>
+                        <p class="card-desc">Restituisce le tuple della prima relazione che non sono presenti nella seconda.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="category-section">
+                <div class="category-banner"><span>BASE</span></div>
+                <div class="flashcards-grid">
+                    <div class="flashcard glass-effect">
+                        <span class="card-label lbl-base">BASE</span>
+                        <h3 class="card-title">Selezione <span class="symbol">&sigma;</span></h3>
+                        <p class="card-desc">Estrae un sottoinsieme di tuple (righe) che soddisfano una specifica condizione logica.</p>
+                    </div>
+                    <div class="flashcard glass-effect">
+                        <span class="card-label lbl-base">BASE</span>
+                        <h3 class="card-title">Proiezione <span class="symbol">&pi;</span></h3>
+                        <p class="card-desc">Seleziona e restituisce solo alcuni attributi (colonne) scartando i rimanenti ed eliminando i duplicati.</p>
+                    </div>
+                    <!-- Nuova card Rinominazione aggiunta per completare il set BASE -->
+                    <div class="flashcard glass-effect">
+                        <span class="card-label lbl-base">BASE</span>
+                        <h3 class="card-title">Rinominazione <span class="symbol">&rho;</span></h3>
+                        <p class="card-desc">Cambia il nome di uno o più attributi (colonne) in una relazione.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="category-section">
+                <div class="category-banner"><span>JOINS</span></div>
+                <div class="flashcards-grid">
+                    <div class="flashcard glass-effect">
+                        <span class="card-label lbl-joins">JOINS</span>
+                        <h3 class="card-title">Join Naturale <span class="symbol">&#x2A1D;</span></h3>
+                        <p class="card-desc">Combina due relazioni basandosi sull'uguaglianza degli attributi con lo stesso nome.</p>
+                    </div>
+                    <div class="flashcard glass-effect">
+                        <span class="card-label lbl-joins">JOINS</span>
+                        <h3 class="card-title">Theta Join <span class="symbol">&#x2A1D;<sub>&theta;</sub></span></h3>
+                        <p class="card-desc">Concatenazione di tuple che soddisfano una condizione generica &theta; tra attributi.</p>
+                    </div>
+                    <!-- FASE C: Card Outer Join modificata UI -->
+                    <div class="flashcard glass-effect" id="card-outer-join">
+                        <span class="card-label lbl-joins">JOINS</span>
+                        <h3 class="card-title">Outer Join <span class="symbol">&#x27D7;</span></h3>
+                        <p class="card-desc">Estensione del Join che preserva le tuple senza corrispondenza, riempiendo con valori NULL.</p>
+                        <div class="oj-btn-group">
+                            <button class="oj-btn glass-effect" data-variant="Left Outer Join" data-symbol="&#x27D5;">LEFT</button>
+                            <button class="oj-btn glass-effect" data-variant="Right Outer Join" data-symbol="&#x27D6;">RIGHT</button>
+                            <button class="oj-btn glass-effect" data-variant="Full Outer Join" data-symbol="&#x27D7;">FULL</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA 3: INTERACTIVE WORKSPACE -->
+        <section id="view-workspace" class="view-section fade-out">
+            <div class="workspace-header">
+                <h2 id="ws-dynamic-title">Operatore <span class="symbol">?</span></h2>
+                
+                <!-- FASE D: Pannello Teorico Dinamico -->
+                <div class="theory-panel glass-effect" id="theory-panel">
+                    <div class="theory-icon">💡</div>
+                    <p id="theory-desc">Descrizione teorica dell'operatore...</p>
+                </div>
+            </div>
+
+            <div class="workspace-layout">
+                
+                <!-- DIAGRAMMA DI VENN (Solo per Insiemistica) -->
+                <div class="venn-wrapper glass-effect" id="venn-container" style="display: none;">
+                    <svg viewBox="0 0 300 180" class="venn-svg">
+                        <defs>
+                            <!-- Maschere per creare pezzi separati dei cerchi -->
+                            <mask id="mask-not-b">
+                                <rect width="100%" height="100%" fill="white"/>
+                                <circle cx="190" cy="90" r="70" fill="black"/>
+                            </mask>
+                            <mask id="mask-not-a">
+                                <rect width="100%" height="100%" fill="white"/>
+                                <circle cx="110" cy="90" r="70" fill="black"/>
+                            </mask>
+                            <clipPath id="clip-a">
+                                <circle cx="110" cy="90" r="70"/>
+                            </clipPath>
+                        </defs>
+                        
+                        <!-- Area Esclusiva A -->
+                        <circle id="venn-part-a" class="venn-part" cx="110" cy="90" r="70" mask="url(#mask-not-b)"/>
+                        
+                        <!-- Area Esclusiva B -->
+                        <circle id="venn-part-b" class="venn-part" cx="190" cy="90" r="70" mask="url(#mask-not-a)"/>
+                        
+                        <!-- Area Intersezione (A e B) -->
+                        <circle id="venn-part-ab" class="venn-part" cx="190" cy="90" r="70" clip-path="url(#clip-a)"/>
+
+                        <!-- Etichette -->
+                        <text x="75" y="90" class="venn-label" id="venn-lbl-a">A</text>
+                        <text x="225" y="90" class="venn-label" id="venn-lbl-b">B</text>
+                        <text x="150" y="90" class="venn-label" id="venn-lbl-ab">A∩B</text>
+                    </svg>
+                </div>
+
+                <!-- TOP AREA: Input Tables -->
+                <div class="workspace-inputs">
+                    <div class="table-box glass-effect" id="box-table-a">
+                        <h4 class="table-title">Tabella A <span class="subtitle" id="subtitle-a">(Impiegati)</span></h4>
+                        <div class="table-responsive" id="content-table-a"></div>
+                    </div>
+                    <div class="table-box glass-effect" id="box-table-b">
+                        <h4 class="table-title">Tabella B <span class="subtitle" id="subtitle-b">(Dipartimenti)</span></h4>
+                        <div class="table-responsive" id="content-table-b"></div>
+                    </div>
+                </div>
+
+                <!-- MIDDLE AREA: Console di Comando -->
+                <div class="workspace-console glass-effect">
+                    <div class="console-header">
+                        <span class="console-title">Console di Comando</span>
+                        <span class="console-hint" id="active-hint">💡 Seleziona un operatore</span>
+                    </div>
+                    <div class="console-input-area">
+                        <textarea id="query-input" class="console-textarea" placeholder="Scrivi la tua query in SQL o Algebra Relazionale qui..."></textarea>
+                        <button class="btn-execute glass-effect" id="btn-run-query">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                            Esegui
+                        </button>
+                    </div>
+                    <div class="console-feedback-msg" id="console-feedback"></div>
+                </div>
+
+                <!-- BOTTOM AREA: Output Table -->
+                <div class="workspace-output">
+                    <div class="table-box glass-effect output-box">
+                        <h4 class="table-title">Risultato</h4>
+                        <div class="table-responsive" id="output-placeholder">
+                            <div class="table-content-placeholder">L'output apparirà qui dopo l'esecuzione...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // === DATI DEGLI OPERATORI ===
+        const operatorsData = {
+            "Unione": { hint: "💡 Suggerimento: SELECT * FROM TabellaA UNION SELECT * FROM TabellaB", expectedKeywords: ["union"] },
+            "Intersezione": { hint: "💡 Suggerimento: SELECT * FROM TabellaA INTERSECT SELECT * FROM TabellaB", expectedKeywords: ["intersect"] },
+            "Differenza": { hint: "💡 Suggerimento: SELECT * FROM TabellaA EXCEPT SELECT * FROM TabellaB", expectedKeywords: ["except", "minus"] },
+            "Selezione": { hint: "💡 Suggerimento: SELECT * FROM TabellaA WHERE Salario > 2200", expectedKeywords: ["select", "where"] },
+            "Proiezione": { hint: "💡 Suggerimento: SELECT Nome, Ruolo FROM TabellaA", expectedKeywords: ["select", "from"] },
+            "Rinominazione": { hint: "💡 Suggerimento: RENAME Ruolo AS Posizione", expectedKeywords: ["rename", "as"] }, 
+            "Join Naturale": { hint: "💡 Suggerimento: SELECT * FROM TabellaA NATURAL JOIN TabellaB", expectedKeywords: ["natural join"] },
+            "Theta Join": { hint: "💡 Suggerimento: SELECT * FROM TabellaA JOIN TabellaB ON TabellaA.ID_Reparto = TabellaB.ID_Reparto", expectedKeywords: ["join", "on"] },
+            // FASE C: Logiche aggiunte per Outer Joins specifici
+            "Left Outer Join": { hint: "💡 Suggerimento: SELECT * FROM TabellaA LEFT OUTER JOIN TabellaB ON ...", expectedKeywords: ["left join", "left outer join"] },
+            "Right Outer Join": { hint: "💡 Suggerimento: SELECT * FROM TabellaA RIGHT OUTER JOIN TabellaB ON ...", expectedKeywords: ["right join", "right outer join"] },
+            "Full Outer Join": { hint: "💡 Suggerimento: SELECT * FROM TabellaA FULL OUTER JOIN TabellaB ON ...", expectedKeywords: ["full join", "full outer join"] }
+        };
+
+        // FASE D: DATI TEORICI DIDATTICI
+        const theoryData = {
+            "Unione": "Combina due relazioni in un'unica tabella contenente tutte le tuple presenti in entrambe, eliminando in automatico i duplicati. Le tabelle di partenza devono essere compatibili.",
+            "Intersezione": "Estrae esclusivamente le tuple che sono presenti contemporaneamente in entrambe le tabelle di partenza. Agisce come un filtro rigoroso sulle uguaglianze.",
+            "Differenza": "Restituisce le tuple che appartengono alla prima tabella (A) ma che non sono presenti nella seconda (B). L'ordine delle tabelle è fondamentale.",
+            "Selezione": "Filtra orizzontalmente una tabella, estraendo e restituendo solo le righe (tuple) che soddisfano una specifica condizione logica impostata (es. Salario > 2000).",
+            "Proiezione": "Filtra verticalmente una tabella, estraendo solo le colonne (attributi) richieste e scartando le altre. Rimuove in automatico le righe duplicate risultanti.",
+            "Rinominazione": "Modifica lo schema della tabella cambiando il nome di uno o più attributi. Non altera i dati, ma solo la loro intestazione per facilitare operazioni successive.",
+            "Join Naturale": "Combina due tabelle basandosi sull'uguaglianza dei valori negli attributi con lo stesso nome. Fonde le righe corrispondenti in un'unica tupla.",
+            "Theta Join": "Estensione del join che combina le righe di due tabelle basandosi su una condizione logica esplicita (es. > o <) tra attributi, non limitandosi all'uguaglianza.",
+            "Left Outer Join": "Unisce le tabelle preservando TUTTE le righe della tabella di sinistra. Se non c'è corrispondenza a destra, riempie i campi mancanti con valori NULL.",
+            "Right Outer Join": "Unisce le tabelle preservando TUTTE le righe della tabella di destra. Se non c'è corrispondenza a sinistra, riempie i campi mancanti con valori NULL.",
+            "Full Outer Join": "Unisce le tabelle preservando TUTTE le righe di entrambe. Le righe senza corrispondenza da entrambe le parti vengono mantenute e riempite con valori NULL."
+        };
+
+        // === DATI MOCK ===
+        const mockDataA = [
+            { ID: 1, Nome: "Mario Rossi", Ruolo: "Sviluppatore", Salario: 2500 },
+            { ID: 2, Nome: "Luigi Bianchi", Ruolo: "Analista", Salario: 2200 },
+            { ID: 3, Nome: "Giulia Verdi", Ruolo: "Manager", Salario: 3500 }
+        ];
+
+        const mockDataC = [
+            { ID: 2, Nome: "Luigi Bianchi", Ruolo: "Analista", Salario: 2200 }, 
+            { ID: 3, Nome: "Giulia Verdi", Ruolo: "Manager", Salario: 3500 }, 
+            { ID: 4, Nome: "Anna Neri", Ruolo: "Designer", Salario: 2100 },
+            { ID: 5, Nome: "Paolo Gialli", Ruolo: "Sviluppatore", Salario: 2400 }
+        ];
+
+        const mockDataB = [
+            { Dip_ID: 101, Nome_Dip: "IT", Sede: "Milano" },
+            { Dip_ID: 102, Nome_Dip: "HR", Sede: "Roma" }
+        ];
+
+        // Dati Specifici per i JOIN (Fase A)
+        const mockDataJoinA = [
+            { ID_Dip: 1, Nome: "Alice", ID_Reparto: 10 },
+            { ID_Dip: 2, Nome: "Bob", ID_Reparto: 20 },
+            { ID_Dip: 3, Nome: "Charlie", ID_Reparto: 30 } 
+        ];
+
+        const mockDataJoinB = [
+            { ID_Reparto: 10, Nome_Reparto: "Risorse Umane" },
+            { ID_Reparto: 20, Nome_Reparto: "Sviluppo IT" },
+            { ID_Reparto: 40, Nome_Reparto: "Marketing" } 
+        ];
+
+        let currentActiveOperator = "";
+        let isSetOperation = false;
+
+        // Elementi DOM
+        const viewHome = document.getElementById('view-home');
+        const viewApp = document.getElementById('view-app');
+        const viewWorkspace = document.getElementById('view-workspace');
+        const btnBack = document.getElementById('btn-back');
+        const wsDynamicTitle = document.getElementById('ws-dynamic-title');
+        const theoryDesc = document.getElementById('theory-desc'); // FASE D
+        const queryInput = document.getElementById('query-input');
+        const activeHint = document.getElementById('active-hint');
+        const btnRunQuery = document.getElementById('btn-run-query');
+        const consoleFeedback = document.getElementById('console-feedback');
+        const outputPlaceholder = document.getElementById('output-placeholder');
+        
+        const vennContainer = document.getElementById('venn-container');
+        const vennPartA = document.getElementById('venn-part-a');
+        const vennPartB = document.getElementById('venn-part-b');
+        const vennPartAB = document.getElementById('venn-part-ab');
+        const vennLblA = document.getElementById('venn-lbl-a');
+        const vennLblB = document.getElementById('venn-lbl-b');
+        const vennLblAB = document.getElementById('venn-lbl-ab');
+
+        const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+        function resetConsoleAndVenn() {
+            queryInput.value = "";
+            queryInput.classList.remove('success', 'error');
+            consoleFeedback.classList.remove('show', 'text-success', 'text-error');
+            consoleFeedback.innerText = "";
+            outputPlaceholder.innerHTML = "<div class='table-content-placeholder'>L'output apparirà qui dopo l'esecuzione...</div>";
+            
+            vennPartA.classList.remove('glow-blue');
+            vennPartB.classList.remove('glow-purple');
+            vennPartAB.classList.remove('glow-green', 'glow-blue', 'glow-purple', 'glow-red');
+            vennLblA.classList.remove('label-active');
+            vennLblB.classList.remove('label-active');
+            vennLblAB.classList.remove('label-active');
+
+            document.querySelectorAll('.glass-table tr').forEach(tr => {
+                tr.className = '';
+                Array.from(tr.children).forEach(cell => {
+                    cell.className = '';
+                    cell.style = ''; 
+                });
+            });
+        }
+
+        function renderTable(data, containerId, rowPrefix) {
+            const container = document.getElementById(containerId);
+            if (!data || data.length === 0) return;
+
+            const headers = Object.keys(data[0]);
+            let html = `<table class="glass-table" id="table-${rowPrefix}"><thead><tr>`;
+            headers.forEach(h => html += `<th>${h}</th>`);
+            html += '</tr></thead><tbody>';
+
+            data.forEach(row => {
+                html += `<tr id="tr-${rowPrefix}-${row.ID || row.ID_Dip || row.ID_Reparto}">`;
+                headers.forEach(h => html += `<td>${row[h]}</td>`);
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function renderOutput(data, colorMapping = null) {
+            if (!data || data.length === 0) {
+                outputPlaceholder.innerHTML = "<div class='table-content-placeholder'>Nessun risultato.</div>";
+                return;
+            }
+            const headers = Object.keys(data[0]);
+            let html = `<table class="glass-table"><thead><tr>`;
+            headers.forEach(h => html += `<th>${h}</th>`);
+            html += '</tr></thead><tbody id="output-tbody">';
+            
+            data.forEach((row, index) => {
+                let customClass = '';
+                // Fallback ID checking for color mapping
+                const rowId = row.ID || row.ID_Dip || row.ID_Reparto;
+                if (colorMapping && colorMapping[rowId]) {
+                    customClass = colorMapping[rowId];
+                }
+                html += `<tr class="row-slide-in ${customClass}" style="animation-delay: ${index * 0.1}s">`;
+                headers.forEach(h => html += `<td>${row[h]}</td>`);
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            outputPlaceholder.innerHTML = html;
+        }
+
+        // ================= SPA TRANSITION LOGIC =================
+        function launchWorkspace(operatorName, operatorSymbol) {
+            currentActiveOperator = operatorName;
+            isSetOperation = ["Unione", "Intersezione", "Differenza"].includes(operatorName);
+            
+            wsDynamicTitle.innerHTML = `${operatorName} <span class="symbol">${operatorSymbol}</span>`;
+            
+            if(operatorsData[operatorName]) activeHint.innerHTML = operatorsData[operatorName].hint;
+            
+            // FASE D: Popola il pannello testuale della teoria
+            if(theoryData[operatorName]) {
+                theoryDesc.innerText = theoryData[operatorName];
+            } else {
+                theoryDesc.innerText = "Esplora il funzionamento di questo operatore attraverso la console.";
+            }
+            
+            resetConsoleAndVenn();
+
+            viewApp.classList.add('fade-out');
+            setTimeout(() => {
+                viewApp.style.display = 'none';
+                viewWorkspace.style.display = 'block';
+                btnBack.style.display = 'flex'; 
+                
+                if (isSetOperation) {
+                    vennContainer.style.display = 'flex';
+                    document.getElementById('subtitle-a').innerText = "(Impiegati Milano)";
+                    document.getElementById('subtitle-b').innerText = "(Impiegati Roma)";
+                    renderTable(mockDataA, 'content-table-a', 'A');
+                    document.getElementById('box-table-b').style.display = 'flex';
+                    renderTable(mockDataC, 'content-table-b', 'B');
+                } else {
+                    vennContainer.style.display = 'none';
+                    
+                    if (["Selezione", "Proiezione", "Rinominazione"].includes(operatorName)) {
+                        document.getElementById('subtitle-a').innerText = "(Impiegati)";
+                        document.getElementById('box-table-b').style.display = 'none';
+                        renderTable(mockDataA, 'content-table-a', 'A');
+                    } else {
+                        document.getElementById('subtitle-a').innerText = "(Dipendenti)";
+                        document.getElementById('subtitle-b').innerText = "(Reparti)";
+                        document.getElementById('box-table-b').style.display = 'flex';
+                        renderTable(mockDataJoinA, 'content-table-a', 'A');
+                        renderTable(mockDataJoinB, 'content-table-b', 'B');
+
+                        document.querySelectorAll('#table-A th, #table-B th').forEach(th => {
+                            if (th.textContent.trim() === 'ID_Reparto') {
+                                th.classList.add('th-key-highlight');
+                            }
+                        });
+                    }
+                }
+
+                setTimeout(() => {
+                    viewWorkspace.classList.remove('fade-out');
+                    btnBack.classList.remove('fade-out');
+                }, 50);
+                window.scrollTo(0,0);
+            }, 500);
+        }
+
+        // GESTIONE CLICK SULLE FLASHCARD STANDARD
+        document.querySelectorAll('.flashcard').forEach(card => {
+            // FASE C: Ignora il click generale se è la card con i bottoni interattivi
+            if(card.id === 'card-outer-join') return;
+
+            card.addEventListener('click', function() {
+                const titleNode = this.querySelector('.card-title');
+                let operatorName = '';
+                for (let node of titleNode.childNodes) {
+                    if (node.nodeType === Node.TEXT_NODE) operatorName += node.textContent;
+                }
+                operatorName = operatorName.trim();
+                const operatorSymbol = titleNode.querySelector('.symbol').innerHTML;
+                
+                launchWorkspace(operatorName, operatorSymbol);
+            });
+        });
+
+        // FASE C: GESTIONE CLICK BOTTONI OUTER JOIN
+        document.querySelectorAll('.oj-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation(); // Previene comportamenti indesiderati del genitore
+                const variantName = this.getAttribute('data-variant');
+                const variantSymbol = this.getAttribute('data-symbol');
+                launchWorkspace(variantName, variantSymbol);
+            });
+        });
+
+
+        // ESECUZIONE E ANIMAZIONI
+        btnRunQuery.addEventListener('click', async () => {
+            const userQuery = queryInput.value.trim().toLowerCase();
+            const operatorInfo = operatorsData[currentActiveOperator];
+            
+            resetConsoleAndVenn(); 
+            queryInput.value = userQuery; 
+
+            if(!userQuery) {
+                queryInput.classList.add('error');
+                consoleFeedback.innerText = "⚠️ Inserisci una query per procedere.";
+                consoleFeedback.classList.add('show', 'text-error');
+                return;
+            }
+
+            let isValid = false;
+            if(operatorInfo && operatorInfo.expectedKeywords) {
+                if (currentActiveOperator === "Differenza" || currentActiveOperator.includes("Outer Join")) {
+                    isValid = operatorInfo.expectedKeywords.some(keyword => userQuery.includes(keyword));
+                } else {
+                    isValid = operatorInfo.expectedKeywords.every(keyword => userQuery.includes(keyword));
+                }
+            }
+
+            if(!isValid) {
+                queryInput.classList.add('error');
+                consoleFeedback.innerText = "❌ Controlla la sintassi e riprova. Verifica di aver usato le keyword corrette.";
+                consoleFeedback.classList.add('show', 'text-error');
+                return;
+            }
+
+            queryInput.classList.add('success');
+            consoleFeedback.innerText = "✅ Elaborazione in corso...";
+            consoleFeedback.classList.add('show', 'text-success');
+
+            // ANIMAZIONI INSIEMISTICA
+            if(isSetOperation) {
+                if(currentActiveOperator === "Intersezione") {
+                    vennPartAB.classList.add('glow-green');
+                    vennLblAB.classList.add('label-active');
+                    
+                    const intersectData = mockDataA.filter(a => mockDataC.some(c => c.ID === a.ID));
+                    const colorMap = {};
+                    intersectData.forEach(row => {
+                        document.getElementById(`tr-A-${row.ID}`)?.classList.add('row-highlight-match');
+                        document.getElementById(`tr-B-${row.ID}`)?.classList.add('row-highlight-match');
+                        colorMap[row.ID] = 'row-highlight-match';
+                    });
+
+                    setTimeout(() => {
+                        renderOutput(intersectData, colorMap);
+                        consoleFeedback.innerText = "✅ Completato! Le tuple in comune sono state estratte.";
+                    }, 1200);
+                }
+                
+                else if(currentActiveOperator === "Differenza") {
+                    vennPartA.classList.add('glow-blue');
+                    vennLblA.classList.add('label-active');
+                    
+                    const diffData = [];
+                    const colorMap = {};
+                    mockDataA.forEach(row => {
+                        const inB = mockDataC.some(c => c.ID === row.ID);
+                        const trA = document.getElementById(`tr-A-${row.ID}`);
+                        if(inB) {
+                            trA?.classList.add('row-duplicate');
+                        } else {
+                            trA?.classList.add('row-color-a');
+                            diffData.push(row);
+                            colorMap[row.ID] = 'row-color-a';
+                        }
+                    });
+                    mockDataC.forEach(row => {
+                        const inA = mockDataA.some(a => a.ID === row.ID);
+                        const trB = document.getElementById(`tr-B-${row.ID}`);
+                        if(inA) {
+                            trB?.classList.add('row-duplicate');
+                        } else {
+                            trB?.classList.add('row-color-b');
+                        }
+                    });
+
+                    setTimeout(() => {
+                        renderOutput(diffData, colorMap);
+                        consoleFeedback.innerText = "✅ Completato! Sono state sottratte le tuple di B.";
+                    }, 1200);
+                }
+
+                else if(currentActiveOperator === "Unione") {
+                    vennPartA.classList.add('glow-blue');
+                    vennPartB.classList.add('glow-purple');
+                    vennPartAB.classList.add('glow-red'); 
+                    vennLblA.classList.add('label-active');
+                    vennLblB.classList.add('label-active');
+                    
+                    const unionData = [];
+                    const colorMap = {};
+
+                    mockDataA.forEach(row => {
+                        const isDup = mockDataC.some(c => c.ID === row.ID);
+                        const trA = document.getElementById(`tr-A-${row.ID}`);
+                        if(isDup) {
+                            trA?.classList.add('row-duplicate');
+                            unionData.push(row);
+                            colorMap[row.ID] = 'row-duplicate';
+                        } else {
+                            trA?.classList.add('row-color-a');
+                            unionData.push(row);
+                            colorMap[row.ID] = 'row-color-a';
+                        }
+                    });
+
+                    mockDataC.forEach(row => {
+                        const isDup = mockDataA.some(a => a.ID === row.ID);
+                        const trB = document.getElementById(`tr-B-${row.ID}`);
+                        if(isDup) {
+                            trB?.classList.add('row-duplicate');
+                        } else {
+                            trB?.classList.add('row-color-b');
+                            unionData.push(row);
+                            colorMap[row.ID] = 'row-color-b';
+                        }
+                    });
+
+                    setTimeout(() => {
+                        renderOutput(unionData, colorMap);
+                        consoleFeedback.innerText = "✅ Completato! Le relazioni sono unite, e i duplicati stampati una sola volta.";
+                    }, 1200);
+                }
+            } 
+            // ANIMAZIONI OPERATORI DI BASE
+            else if (["Selezione", "Proiezione", "Rinominazione"].includes(currentActiveOperator)) {
+                
+                if (currentActiveOperator === "Selezione") {
+                    let conditionField = "Salario";
+                    let conditionOperator = ">";
+                    let conditionValue = 2200;
+                    
+                    const whereMatch = userQuery.match(/where\s+(\w+)\s*([<>=])\s*(\d+)/);
+                    if (whereMatch) {
+                        const matchedField = Object.keys(mockDataA).find(k => k.toLowerCase() === whereMatch[1]);
+                        if (matchedField) conditionField = matchedField;
+                        conditionOperator = whereMatch[2];
+                        conditionValue = parseInt(whereMatch[3]);
+                    }
+
+                    consoleFeedback.innerText = `✅ Analisi delle tuple in corso (Condizione: ${conditionField} ${conditionOperator} ${conditionValue})...`;
+                    const resultData = [];
+                    
+                    for (let i = 0; i < mockDataA.length; i++) {
+                        const row = mockDataA[i];
+                        const tr = document.getElementById(`tr-A-${row.ID}`);
+                        if(!tr) continue;
+                        
+                        tr.classList.add('row-scan-active');
+                        await sleep(600);
+                        
+                        let conditionMet = false;
+                        const val = row[conditionField];
+                        if (conditionOperator === '>') conditionMet = val > conditionValue;
+                        else if (conditionOperator === '<') conditionMet = val < conditionValue;
+                        else if (conditionOperator === '=') conditionMet = val == conditionValue;
+
+                        if (conditionMet) {
+                            tr.classList.replace('row-scan-active', 'row-highlight-match');
+                            resultData.push(row);
+                            await sleep(400); 
+                        } else {
+                            tr.classList.replace('row-scan-active', 'row-scan-fade');
+                        }
+                    }
+                    
+                    await sleep(400);
+                    renderOutput(resultData);
+                    consoleFeedback.innerText = `✅ Selezionate con successo le tuple che soddisfano: ${conditionField} ${conditionOperator} ${conditionValue}.`;
+                }
+                
+                else if (currentActiveOperator === "Proiezione") {
+                    let columnsToKeep = ["Nome", "Ruolo"]; 
+                    
+                    const selectMatch = userQuery.match(/select\s+([\s\S]+?)\s+from/);
+                    if (selectMatch && !selectMatch[1].includes("*")) {
+                        const requestedCols = selectMatch[1].split(',').map(s => s.trim().toLowerCase());
+                        const actualCols = Object.keys(mockDataA);
+                        const matchedCols = actualCols.filter(c => requestedCols.includes(c.toLowerCase()));
+                        if (matchedCols.length > 0) {
+                            columnsToKeep = matchedCols;
+                        }
+                    }
+
+                    consoleFeedback.innerText = `✅ Estrazione delle colonne in corso (${columnsToKeep.join(', ')})...`;
+                    const tableA = document.getElementById('table-A');
+                    
+                    if(tableA) {
+                        const headers = Array.from(tableA.querySelectorAll('th'));
+                        
+                        const keepIndices = headers.map((th, i) => columnsToKeep.map(c=>c.toLowerCase()).includes(th.textContent.trim().toLowerCase()) ? i : -1).filter(i => i !== -1);
+                        
+                        tableA.querySelectorAll('tr').forEach(tr => {
+                            Array.from(tr.children).forEach((cell, i) => {
+                                cell.style.transition = "all 0.5s ease";
+                                if (!keepIndices.includes(i)) {
+                                    cell.classList.add('col-fade-out');
+                                }
+                            });
+                        });
+                        
+                        await sleep(600); 
+                        
+                        tableA.querySelectorAll('tr').forEach(tr => {
+                            Array.from(tr.children).forEach((cell, i) => {
+                                if (keepIndices.includes(i)) {
+                                    cell.classList.add('col-highlight');
+                                    cell.style.transform = "scale(1.02)";
+                                    cell.style.zIndex = "10";
+                                    cell.style.position = "relative";
+                                }
+                            });
+                        });
+                        
+                        await sleep(1000); 
+                        
+                        const resultData = mockDataA.map(row => {
+                            const newRow = {};
+                            columnsToKeep.forEach(col => newRow[col] = row[col]);
+                            return newRow;
+                        });
+                        
+                        renderOutput(resultData);
+                        consoleFeedback.innerText = `✅ Proiezione completata: mantenute solo le colonne ${columnsToKeep.join(', ')}.`;
+                    }
+                }
+                
+                else if (currentActiveOperator === "Rinominazione") {
+                    let oldCol = "Ruolo";
+                    let newCol = "Posizione";
+
+                    const renameMatch = userQuery.match(/rename\s+(\w+)\s+as\s+(\w+)/);
+                    if (renameMatch) {
+                        const matchedField = Object.keys(mockDataA).find(k => k.toLowerCase() === renameMatch[1]);
+                        if (matchedField) {
+                            oldCol = matchedField;
+                            newCol = renameMatch[2].charAt(0).toUpperCase() + renameMatch[2].slice(1);
+                        }
+                    }
+
+                    consoleFeedback.innerText = `✅ Modifica dello schema in corso (${oldCol} ➔ ${newCol})...`;
+                    const tableA = document.getElementById('table-A');
+                    
+                    if(tableA) {
+                        const headers = Array.from(tableA.querySelectorAll('th'));
+                        
+                        const targetIndex = headers.findIndex(th => th.textContent.trim().toLowerCase() === oldCol.toLowerCase());
+                        
+                        if (targetIndex !== -1) {
+                            const targetTh = headers[targetIndex];
+                            
+                            tableA.querySelectorAll('tr').forEach(tr => {
+                                const cell = tr.children[targetIndex];
+                                if(cell) cell.classList.add('col-highlight');
+                            });
+                            
+                            await sleep(600);
+                            
+                            targetTh.style.transition = "all 0.4s ease";
+                            targetTh.style.opacity = "0"; 
+                            targetTh.style.transform = "translateY(-5px)";
+                            
+                            await sleep(400);
+                            
+                            targetTh.textContent = newCol; 
+                            targetTh.classList.add('th-renaming-glow');
+                            targetTh.style.opacity = "1"; 
+                            targetTh.style.transform = "translateY(0)";
+                            
+                            await sleep(800);
+                            targetTh.classList.remove('th-renaming-glow');
+                        }
+                        
+                        await sleep(300);
+                        
+                        const resultData = mockDataA.map(row => {
+                            const newRow = { ...row };
+                            newRow[newCol] = newRow[oldCol];
+                            delete newRow[oldCol];
+                            return newRow;
+                        });
+                        
+                        renderOutput(resultData);
+                        consoleFeedback.innerText = `✅ Rinominazione applicata con successo nello schema di output.`;
+                    }
+                }
+                
+            } 
+            // FASE C: ANIMAZIONI JOINS COMPLETE E PERFEZIONATE
+            else if (["Join Naturale", "Theta Join", "Left Outer Join", "Right Outer Join", "Full Outer Join"].includes(currentActiveOperator)) {
+                
+                let joinType = "inner";
+                if (currentActiveOperator === "Left Outer Join") joinType = "left";
+                else if (currentActiveOperator === "Right Outer Join") joinType = "right";
+                else if (currentActiveOperator === "Full Outer Join") joinType = "full";
+
+                consoleFeedback.innerText = `✅ Ricerca delle corrispondenze in corso (${joinType.toUpperCase()} JOIN)...`;
+                const resultData = [];
+                
+                // Creazione dello span NULL rosso neon in modo programmatico
+                const nullSpan = `<span style="color: #ef4444; text-shadow: 0 0 10px #ef4444; font-weight: 800;">NULL</span>`;
+                const emptyA = { ID_Dip: nullSpan, Nome: nullSpan }; 
+                const emptyB = { Nome_Reparto: nullSpan }; 
+
+                const tableATrs = document.querySelectorAll('#table-A tbody tr');
+                const tableBTrs = document.querySelectorAll('#table-B tbody tr');
+                const matchedB_Indices = new Set();
+
+                // FASE C: Adesso aggiorna dinamicamente la tabella vuota a ogni push
+                renderOutput([]);
+
+                // LOGICA LEFT, INNER e FULL (La Tabella A Comanda il loop principale)
+                if (joinType === "inner" || joinType === "left" || joinType === "full") {
+                    
+                    for (let i = 0; i < mockDataJoinA.length; i++) {
+                        const rowA = mockDataJoinA[i];
+                        const trA = tableATrs[i]; 
+
+                        if(trA) trA.classList.add('row-scan-active');
+                        await sleep(400);
+
+                        let matchFound = false;
+
+                        for (let j = 0; j < mockDataJoinB.length; j++) {
+                            const rowB = mockDataJoinB[j];
+                            const trB = tableBTrs[j];
+
+                            if(trB) trB.classList.add('row-scan-active');
+                            await sleep(400);
+
+                            const isMatch = (rowA.ID_Reparto === rowB.ID_Reparto);
+
+                            if (isMatch) {
+                                if(trA) trA.classList.replace('row-scan-active', 'row-highlight-match');
+                                if(trB) trB.classList.replace('row-scan-active', 'row-highlight-match');
+
+                                resultData.push({ ...rowA, ...rowB });
+                                matchedB_Indices.add(j);
+                                matchFound = true;
+
+                                await sleep(600); 
+                                renderOutput([...resultData]);
+                                await sleep(400); 
+
+                                if(trB) trB.classList.remove('row-highlight-match');
+                                break; 
+                            } else {
+                                if(trB) trB.classList.remove('row-scan-active');
+                            }
+                        }
+
+                        // Azione Orfani Tabella A (es. Charlie)
+                        if (!matchFound) {
+                            if (joinType === "left" || joinType === "full") {
+                                // FASE C: Orfano scende lo stesso aggiungendo il NULL
+                                if(trA) trA.classList.replace('row-scan-active', 'row-color-a');
+                                resultData.push({ ...rowA, ...emptyB });
+                                await sleep(400);
+                                renderOutput([...resultData]);
+                            } else {
+                                // Fallimento visivo per Inner Join
+                                if(trA && joinType === "inner") {
+                                    trA.classList.replace('row-scan-active', 'row-duplicate'); 
+                                    await sleep(600);
+                                    trA.classList.replace('row-duplicate', 'row-scan-fade'); 
+                                } else if (trA) {
+                                    trA.classList.replace('row-scan-active', 'row-scan-fade');
+                                }
+                            }
+                        } else {
+                            if(trA) trA.classList.remove('row-highlight-match');
+                        }
+                    }
+
+                    // Aggiunta finale orfani Tabella B solo per FULL JOIN (es. Marketing)
+                    if (joinType === "full") {
+                        for (let j = 0; j < mockDataJoinB.length; j++) {
+                            if (!matchedB_Indices.has(j)) {
+                                const rowB = mockDataJoinB[j];
+                                const trB = tableBTrs[j];
+                                if(trB) {
+                                    trB.classList.add('row-color-b'); 
+                                    await sleep(400);
+                                }
+                                // Mantiene il reparto di B, aggiungendo NULL di A
+                                resultData.push({ ...emptyA, ...rowB });
+                                renderOutput([...resultData]);
+                            }
+                        }
+                    }
+                } 
+                // LOGICA RIGHT JOIN (La Tabella B Comanda il loop principale)
+                else if (joinType === "right") {
+                    
+                    for (let j = 0; j < mockDataJoinB.length; j++) {
+                        const rowB = mockDataJoinB[j];
+                        const trB = tableBTrs[j];
+
+                        if(trB) trB.classList.add('row-scan-active');
+                        await sleep(400);
+
+                        let matchFound = false;
+
+                        for (let i = 0; i < mockDataJoinA.length; i++) {
+                            const rowA = mockDataJoinA[i];
+                            const trA = tableATrs[i]; 
+
+                            if(trA) trA.classList.add('row-scan-active');
+                            await sleep(400);
+
+                            const isMatch = (rowA.ID_Reparto === rowB.ID_Reparto);
+
+                            if (isMatch) {
+                                if(trA) trA.classList.replace('row-scan-active', 'row-highlight-match');
+                                if(trB) trB.classList.replace('row-scan-active', 'row-highlight-match');
+
+                                resultData.push({ ...rowA, ...rowB });
+                                matchFound = true;
+
+                                await sleep(600); 
+                                renderOutput([...resultData]);
+                                await sleep(400); 
+
+                                if(trA) trA.classList.remove('row-highlight-match');
+                                break; 
+                            } else {
+                                if(trA) trA.classList.remove('row-scan-active');
+                            }
+                        }
+
+                        // Azione Orfani Tabella B (es. Marketing)
+                        if (!matchFound) {
+                            // FASE C: Orfano scende riempiendo a sinistra con NULL
+                            if(trB) trB.classList.replace('row-scan-active', 'row-color-b');
+                            resultData.push({ ...emptyA, ...rowB });
+                            await sleep(400);
+                            renderOutput([...resultData]);
+                        } else {
+                            if(trB) trB.classList.remove('row-highlight-match');
+                        }
+                    }
+
+                    // Ingrigisce gli orfani ignorati in Tabella A (es. Charlie) per completezza visiva
+                    for (let i = 0; i < mockDataJoinA.length; i++) {
+                        const inResult = resultData.some(r => r.ID_Dip === mockDataJoinA[i].ID_Dip);
+                        if(!inResult) {
+                            const trA = tableATrs[i];
+                            if(trA) trA.classList.add('row-scan-fade');
+                        }
+                    }
+                }
+
+                // Popup finale didattico solo per Inner Joins
+                if (joinType === "inner") {
+                    const toastMsg = document.createElement('div');
+                    toastMsg.innerText = "💡 Solo le righe con una corrispondenza esatta vengono mantenute.";
+                    toastMsg.style.cssText = "position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(0, 229, 255, 0.15); backdrop-filter: blur(10px); border: 1px solid var(--accent-blue); color: #fff; padding: 12px 24px; border-radius: 8px; z-index: 1000; box-shadow: 0 0 20px rgba(0, 229, 255, 0.3); animation: fadeInUp 0.5s ease-out forwards;";
+                    document.body.appendChild(toastMsg);
+                    
+                    setTimeout(() => {
+                        toastMsg.style.opacity = '0';
+                        toastMsg.style.transition = 'opacity 0.5s ease';
+                        setTimeout(() => toastMsg.remove(), 500);
+                    }, 4000);
+                }
+
+                consoleFeedback.innerText = `✅ Operazione di ${currentActiveOperator} completata con successo!`;
+            }
+        });
+
+        // Navigazione Basic
+        function startApp() {
+            const btn = document.querySelector('.btn-outline');
+            btn.style.transform = "scale(0.95)";
+            setTimeout(() => {
+                btn.style.transform = "";
+                viewHome.classList.add('fade-out');
+                setTimeout(() => {
+                    viewHome.style.display = 'none'; viewApp.style.display = 'block';
+                    setTimeout(() => viewApp.classList.remove('fade-out'), 50);
+                }, 500);
+            }, 150);
+        }
+
+        function goBack() {
+            viewWorkspace.classList.add('fade-out'); btnBack.classList.add('fade-out');
+            setTimeout(() => {
+                viewWorkspace.style.display = 'none'; btnBack.style.display = 'none'; viewApp.style.display = 'block';
+                setTimeout(() => viewApp.classList.remove('fade-out'), 50);
+            }, 500);
+        }
+
+        function goHome() {
+            if (viewHome.style.display !== 'none' && viewHome.style.display !== '') return;
+            const activeView = viewWorkspace.style.display === 'block' ? viewWorkspace : viewApp;
+            activeView.classList.add('fade-out');
+            if(viewWorkspace.style.display === 'block') btnBack.classList.add('fade-out');
+            setTimeout(() => {
+                activeView.style.display = 'none'; btnBack.style.display = 'none'; viewHome.style.display = 'flex';
+                setTimeout(() => viewHome.classList.remove('fade-out'), 50);
+            }, 500);
+        }
+    </script>
+</body>
+</html>
